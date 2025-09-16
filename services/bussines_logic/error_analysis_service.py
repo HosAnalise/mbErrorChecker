@@ -2,13 +2,15 @@ from pydantic_ai import Agent
 from pydantic_ai.models.google import GoogleModel
 from pydantic_ai.providers.google import GoogleProvider
 from google.genai import Client
-from models.ErrorModel.ErrorModel import ErrorModel
+from models.ErrorModel.ErrorModel import ErrorModel, ErrorListModel
 from pydantic_ai.models.openai import OpenAIChatModel
 from pydantic_ai.providers.openai import OpenAIProvider
 from os import getenv
+from models.DbModel.QueryReturnModel import QueryReturnModel
+
 
 AGENT_INSTRUCTIONS = """
-1. DIRETIVA DE PERSONA E OBJETIVO CORE
+// 1. DIRETIVA DE PERSONA E OBJETIVO CORE
 
 Você é um Engenheiro SRE (Site Reliability Engineer) Principal, especialista em AIOps (IA para Operações de TI). Sua missão não é apenas agrupar logs, mas sim realizar uma triagem inteligente de erros em um sistema de microserviços. Você deve identificar a causa raiz provável, avaliar o impacto no negócio e fornecer recomendações acionáveis para a equipe de engenharia. Seu objetivo final é gerar um "Relatório de Triagem de Erros" conciso e de alto valor.
 
@@ -98,22 +100,67 @@ StackTrace:    at HOS.Integracoes.Application.Services.FinanceiroWebService.Resp
    at HOS.Integracoes.Application.Services.FinanceiroWebService.EnviarContaReceber(Int64 vendaOrigem, Int32 empresaOrigem, CancellationToken cancellationToken) in C:\Fontes\.NET\HOS.Integracoes\HOS.Integracoes.Application\Services\FinanceiroWebService.cs:line 10835
    --- End of inner exception stack trace ---
 
+Esse um dos exemplos que tu voce vai encotrar. Note que o erro pode variar muito, e a stack trace pode ser longa. Sua tarefa é analisar esses erros e fornecer insights úteis.   
+
+// 4. INSTRUÇÕES DE ANÁLISE E PROCESSAMENTO
+
+Execute as seguintes etapas para cada grupo de erro identificado:
+
+Clusterização Semântica de Erros: Primeiro, agrupe os erros por loja, tabela e pela assinatura semântica do erro. A "assinatura" é a mensagem de erro normalizada (sem dados variáveis como IDs, SKUs, etc.), que você deve extrair.
+
+Análise de Causa Raiz (RCA): Para cada cluster, formule uma hipótese sobre a causa raiz provável. Categorize-a em uma das seguintes classes:
+
+DATA_INPUT_ERROR: Problema com os dados enviados por um sistema de origem.
+
+BUSINESS_LOGIC_ERROR: Falha na lógica de negócio do microserviço.
+
+DEPENDENCY_FAILURE: Falha ao se comunicar com outro serviço, API ou banco de dados.
+
+DATA_INTEGRITY_ERROR: O dado solicitado não existe ou está em um estado inconsistente na base de dados.
+
+UNKNOWN: Se a causa não for clara.
+Forneça uma breve justificativa para sua hipótese.
+
+Avaliação de Impacto e Severidade: Com base na natureza do erro e na tabela/endpoint afetado (ex: processa_pedido é mais crítico que atualiza_metadado), atribua um nível de severidade ao cluster: CRITICAL, HIGH, MEDIUM, ou LOW. Justifique sua avaliação.
+
+Recomendação de Ação Imediata: Para cada cluster, sugira a próxima ação mais lógica para a equipe de engenharia. Seja específico. Por exemplo: "Verificar o serviço de catálogo para garantir que os SKUs são replicados corretamente" é melhor do que "Verificar o erro".
+
 `"""
 
 class ErrorAnalysisService:
     def __init__(self, agent: Agent):
-        self.agent = agent
+        self.agent = agent if agent else AgentFactory().create_error_analysis_agent()
 
-    def analyze_errors(self, raw_messages: str) -> ErrorModel:
+    def group_errors_by_store(self, errors: list[QueryReturnModel]) -> ErrorModel:
+        """
+        Group errors by store code.
+
+        Args:
+            errors (list[ErrorModel]): List of error models.
+
+        Returns:
+            dict[int, list[ErrorModel]]: Dictionary with store code as key and list of errors as value.
+        """
+        grouped_errors = {}
+
+        for error in errors:
+            
+            store_code = error.code
+            if store_code not in grouped_errors:
+                grouped_errors[store_code] = []
+                grouped_errors[store_code].append(error)
+
+        return ErrorListModel(errors=grouped_errors)
+
+    def analyze_errors(self, raw_messages: QueryReturnModel) -> ErrorListModel:
         """
         Analyze raw error messages and return structured error data.
 
         Args:
-            raw_messages (str): Raw error messages to be analyzed.
+            raw_messages (QueryReturnModel): Raw error messages to be analyzed.
 
         """
-        # Call the agent's method to analyze the errors
-        return self.agent.run(raw_messages)
+        return self.agent.run_sync(raw_messages.model_dump_json())
 
 
 class AgentFactory:
@@ -135,31 +182,31 @@ class AgentFactory:
         """
         return GoogleProvider(client=client)
 
-    def create_google_model(self, provider: GoogleProvider = create_google_provider()):
+    def create_google_model(self, provider: GoogleProvider = create_google_provider(), model: str = getenv("GOOGLE_MODEL")):
         """Create and return a GoogleModel.
         Args:
             provider (GoogleProvider): The GoogleProvider instance.
         """
         return GoogleModel(
                             provider=provider,
-                            model_name="gemini-pro",
+                            model_name=model,
                             )
     
-    def create_openai_provider(self, api_key: str):
+    def create_openai_provider(self, api_key: str = getenv("OPENAI_API_KEY")):
         """Create and return an OpenAIProvider.
         Args:
             api_key (str): Your OpenAI API key.
         """
         return OpenAIProvider(api_key=api_key)
-    
-    def create_openai_model(self, provider: OpenAIProvider):
+
+    def create_openai_model(self, provider: OpenAIProvider, model: str = getenv("OPENAI_MODEL")):
         """Create and return an OpenAIChatModel.
         Args:
             provider (OpenAIProvider): The OpenAIProvider instance.
         """
         return OpenAIChatModel(
                                 provider=provider,
-                                model_name="gpt-4-turbo",
+                                model_name=model,
                                 temperature=0.7,
                                 max_retries=3
                                 )

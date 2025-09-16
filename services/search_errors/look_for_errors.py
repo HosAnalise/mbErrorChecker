@@ -6,7 +6,7 @@ LOG_DIRECTORY = 'logs'
 
 
 
-QUERY_SALES_INTEGRATION_ERRORS = """
+QUERY_SALES_INTEGRATION_ERRORS ="""
                                     SELECT 
                                         * 
                                     FROM 
