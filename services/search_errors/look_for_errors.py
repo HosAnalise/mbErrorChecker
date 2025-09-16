@@ -5,7 +5,7 @@ from db.DataBaseManager import DatabaseManager
 LOG_DIRECTORY = 'logs'
 
 
-## necessario ajustar a query para que ela seja mais dinamica e rode em todas as filas
+
 QUERY_SALES_INTEGRATION_ERRORS = """
                                     SELECT 
                                         * 
