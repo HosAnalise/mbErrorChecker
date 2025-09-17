@@ -18,8 +18,7 @@ def get_credentials():
 
 def get_recipients():
     """Recupera a lista de destinatários do banco de dados."""
-    mongo_manager.collection_name = "emails"
-    email_list = mongo_manager.find_all()
+    email_list = mongo_manager.get_data(collection_name="emails")
     email_list_model = EmailListModel(emails=[EmailRecipientModel(**email) for email in email_list])
 
     return [email.email for email in email_list_model.emails if email.is_active == '1']
