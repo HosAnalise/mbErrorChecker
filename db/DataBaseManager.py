@@ -26,9 +26,7 @@ class DatabaseManager:
         self.store = store
         self.connection = None
         self.cursor = None
-       
-
-
+    
 
     def __enter__(self):
         self.connection = self.db_connection()
@@ -90,7 +88,7 @@ class DatabaseManager:
             return [
                 ## Exemplo de Model Pydantic
                 QueryReturnModel(
-                    venda=row[0],
+                    code=row[0],
                     empresa=row[1],
                     tentativas=row[2],
                     guid_web=row[3],

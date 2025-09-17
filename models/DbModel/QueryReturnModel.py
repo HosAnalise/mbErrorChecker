@@ -13,3 +13,4 @@ class QueryReturnModel(BaseModel):
     erro: str = Field(..., description="Descrição do erro")
     store:int = Field(..., description="Codigo da loja que o erro pertence")
     table_name:str = Field(..., description="Nome da tabela onde o erro ocorreu")
+    date_column:datetime = Field(..., description="Data/hora em que coluna foi resgatada da tabela")
