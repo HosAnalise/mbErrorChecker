@@ -7,7 +7,7 @@ from pydantic_ai import Agent
 
 
 class workflowState(BaseModel):
-    raw_messages: str = Field(..., description="Mensagens brutas recebidas para análise")
     analyzed_errors: list[QueryReturnModel] = Field(..., description="Lista de erros analisados")
+    updated_errors: list[QueryReturnModel] = Field(..., description="Lista de erros atualizados")
     grouped_errors: ErrorModel = Field(..., description="Erros agrupados por código de loja")
     agent: Agent = Field(..., description="Agente responsável pela análise")

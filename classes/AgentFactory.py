@@ -6,6 +6,10 @@ from models.ErrorModel.ErrorModel import ErrorSummaryModel
 from pydantic_ai.models.openai import OpenAIChatModel
 from pydantic_ai.providers.openai import OpenAIProvider
 from os import getenv
+from typing import Type, Optional, List, Union
+from classes.ErrorAnalysisService import ErrorAnalysisService
+
+
 
 
 AGENT_INSTRUCTIONS = """
@@ -193,31 +197,53 @@ class AgentFactory:
                                 temperature=0.7,
                                 max_retries=3
                                 )
-    
-    
-    def create_agent(self,agent_instructions:str, ai_model: GoogleModel|OpenAIChatModel = create_google_model(),output=ErrorSummaryModel,toolsets:list=[]):
+
+
+    def create_agent(self, 
+                     agent_instructions: str, 
+                     ai_model: Union[GoogleModel, OpenAIChatModel] = create_google_model(), 
+                     output_type: Type = ErrorSummaryModel, 
+                     toolsets: Optional[List] = None, 
+                     **kwargs):
         """
-        Create and return an Agent.
+        Cria e retorna uma instância de Agent configurada.
+
+        Este método fábrica simplifica a criação de agentes, fornecendo
+        padrões sensíveis e uma interface clara.
+
         Args:
-            agent_instructions (str): Instructions for the agent.
-            ai_model (GoogleModel|OpenAIChatModel): The model to be used by the agent.
-            output: The output model for the agent.
+            agent_instructions (str): As instruções que definem o comportamento do agente.
+            ai_model (Union[GoogleModel, OpenAIChatModel]): O modelo de IA a ser usado pelo agente.
+                                                            O padrão é um modelo do Google.
+            output_type (Type): A classe ou modelo de dados que o agente deve usar para 
+                                estruturar sua saída. O padrão é ErrorSummaryModel.
+            toolsets (Optional[List]): Uma lista opcional de ferramentas (toolsets) a serem
+                                       disponibilizadas para o agente.
+            **kwargs: Argumentos de palavra-chave adicionais a serem passados
+                      diretamente para o construtor do Agent.
+
+        Returns:
+            Agent: Uma instância do agente, pronta para ser usada.
         """
+        if toolsets is None:
+            toolsets = []
+
         return Agent(
-                    model=ai_model,
-                    output_type=output,
-                    instructions=agent_instructions,
-                    toolsets=[tool for tool in toolsets],  
-                    )
+            model=ai_model,
+            instructions=agent_instructions,
+            output_type=output_type,
+            toolsets=toolsets,
+            **kwargs
+        )
     
 
-    def create_error_analysis_agent(self,toolsets: list = [], agent_instructions: str = AGENT_INSTRUCTIONS, ai_model: GoogleModel|OpenAIChatModel = create_google_model()):
+    def create_error_analysis_agent(self,toolsets: list = [ErrorAnalysisService.group_errors_by_store], agent_instructions: str = AGENT_INSTRUCTIONS, ai_model: GoogleModel|OpenAIChatModel = create_google_model(),**kwargs) -> Agent:
         """Create and return an error analysis agent.
         Args:
             agent_instructions (str): Instructions for the agent.
             ai_model (GoogleModel|OpenAIChatModel): The model to be used by the agent.
         """
-        return self.create_agent(agent_instructions=agent_instructions, ai_model=ai_model, output=ErrorSummaryModel, toolsets=toolsets)
+        return self.create_agent(agent_instructions=agent_instructions, ai_model=ai_model, output=ErrorSummaryModel, toolsets=toolsets, **kwargs)
     
 
 

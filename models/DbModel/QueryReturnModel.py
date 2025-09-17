@@ -11,5 +11,5 @@ class QueryReturnModel(BaseModel):
     data_hora_tentativa: datetime = Field(..., description="Data e hora da tentativa")
     data_hora_inclusao: datetime = Field(..., description="Data e hora de inclusão")
     erro: str = Field(..., description="Descrição do erro")
-    code:int = Field(..., description="Codigo da loja que o erro pertence")
+    store:int = Field(..., description="Codigo da loja que o erro pertence")
     table_name:str = Field(..., description="Nome da tabela onde o erro ocorreu")
