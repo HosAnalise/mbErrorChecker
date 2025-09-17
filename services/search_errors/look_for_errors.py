@@ -8,19 +8,18 @@ LOG_DIRECTORY = 'logs'
 
 QUERY_SALES_INTEGRATION_ERRORS ="""
                                     SELECT 
-                                        * 
-                                    FROM 
-                                        int_bi_{queue_name} ibv 
-                                    WHERE 
-                                        ibv.erro IS NOT NULL
-                                                 
-                                """
+                                        
+                                  FROM 
+                                      int_bi{queue_name} ibv 
+                                  WHERE 
+                                      ibv.erro IS NOT NULL
+                              """
 
 QUERY_STORE_IDS_TO_CHECK = """
                                 SELECT 
                                     E.CODIGO 
                                 FROM 
-                                    EMPRESA E  
+                                    EMPRESA E
                                 WHERE 
                                     E.STATUS = 'ATIVO'
                             """

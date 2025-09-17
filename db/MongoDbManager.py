@@ -42,7 +42,8 @@ class MongoDbManager:
     def insert_many_data(self, data: list[QueryReturnModel]):
         if self.db:
             collection = self.db[self.collection_name]
-            
+            collection.insert_many(data)
+
     def get_data(self):
         if self.db:
             collection = self.db[self.collection_name]
