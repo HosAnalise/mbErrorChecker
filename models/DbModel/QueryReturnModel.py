@@ -4,7 +4,7 @@ import datetime
 
 
 class QueryReturnModel(BaseModel):
-    venda: int = Field(..., description="ID da venda")
+    code: int = Field(..., description="ID da tabela")
     empresa: int = Field(..., description="ID da empresa")
     tentativas: int = Field(..., description="Número de tentativas")
     guid_web: str = Field(..., description="GUID da web")

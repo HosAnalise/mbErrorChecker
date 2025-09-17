@@ -5,13 +5,16 @@ from models.DbModel.QueryReturnModel import QueryReturnModel
 
 
 class ErrorModel(BaseModel):    
-    error: QueryReturnModel = Field(..., description="Lista de erros do banco de dados")
-    count: int = Field(..., description="Quantidade de erros")
-    type: str = Field(..., description="Tipo do erro")
+    error: list[QueryReturnModel] = Field(..., description="Lista com todo erros encontrados por loja do banco de dados")
+    store: int = Field(..., description="Loja que o erro pertence")
+    count: int = Field(..., description="Quantidade de erros encontrados por loja")
 
 
 class ErrorListModel(BaseModel):
     errors: list[ErrorModel] = Field(..., description="Lista de erros agrupados por loja e tipo")    
-    code:int = Field(..., description="Codigo da loja que o erro pertence")
 
 
+class ErrorSummaryModel(BaseModel):
+    summary: str = Field(..., description="Resumo dos erros encontrados")
+    total_errors: int = Field(..., description="Total de erros encontrados")
+    stores: list[int] = Field(..., description="Lojas com erros")
