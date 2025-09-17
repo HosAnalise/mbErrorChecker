@@ -14,9 +14,6 @@ c_handler.setLevel(logging.INFO)
 logger.addHandler(c_handler)
 
 
-fila_tabela = {
-    "vendas": "caixa"
-}
 
 class DatabaseManager:
     """
@@ -31,7 +28,20 @@ class DatabaseManager:
         self.store = store
         self.connection = None
         self.cursor = None
-       
+        self.fila_tabela = {
+            # "int_bi_autorizacoes":"",
+            # "int_bi_cadastros":"",
+            # "int_bi_cancelamentos_devolve":"",
+            # "int_bi_cod_cancelamentos":"",
+            # "int_bi_contas_pagar":"",
+            # "int_bi_contasconvenios":"",
+            # "int_bi_contcaixas":"",
+            # "int_bi_crediarios":"",
+            # "int_bi_entregas":"",
+            # "int_bi_ids_web":"",
+            # "int_bi_notas":"",
+            "int_bi_vendas": {"caixa": "venda"}
+            }
 
 
 
