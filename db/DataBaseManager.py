@@ -13,6 +13,11 @@ c_handler.setLevel(logging.INFO)
 
 logger.addHandler(c_handler)
 
+
+fila_tabela = {
+    "vendas": "caixa"
+}
+
 class DatabaseManager:
     """
     Database connection handler.
