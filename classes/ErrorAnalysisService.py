@@ -1,14 +1,12 @@
 from models.ErrorModel.ErrorModel import ErrorModel, ErrorListModel
 from models.DbModel.QueryReturnModel import QueryReturnModel
 from collections import defaultdict
-from pydantic_ai import Agent
 
 
 
 
 
-class ErrorAnalysisService:
-   
+class ErrorAnalysisService:   
     
     @staticmethod
     def group_errors_by_store(errors: list[QueryReturnModel]) -> ErrorListModel:

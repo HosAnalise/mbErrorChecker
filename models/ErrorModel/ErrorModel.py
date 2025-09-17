@@ -2,8 +2,6 @@ from pydantic import BaseModel,Field
 from models.DbModel.QueryReturnModel import QueryReturnModel
 
 
-
-
 class ErrorModel(BaseModel):    
     error: list[QueryReturnModel] = Field(..., description="Lista com todo erros encontrados por loja do banco de dados")
     store: int = Field(..., description="Loja que o erro pertence")

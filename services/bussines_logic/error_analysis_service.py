@@ -1,16 +1,18 @@
 from classes.AgentFactory import AgentFactory
-from classes.ErrorAnalysisService import ErrorAnalysisService
+from models.DbModel.QueryReturnModel import QueryReturnModel
 
 
 
 
-def create_error_analysis_agent(toolsets:list=[]):
+
+def run_error_analysis_agent(data: list[QueryReturnModel]):
     """Create an error analysis agent using the AgentFactory."""
  
     with agent_factory := AgentFactory():
-        agent_factory.google_agent.run_sync(toolsets=toolsets)
-
+        return agent_factory.google_agent.run_sync(data).output
+       
 
 
 if __name__ == "__main__":
-    create_error_analysis_agent(toolsets=[ErrorAnalysisService.group_errors_by_store])         
+
+    run_error_analysis_agent(data=[])
