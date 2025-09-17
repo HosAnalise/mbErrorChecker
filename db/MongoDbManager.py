@@ -3,6 +3,8 @@ from pymongo import MongoClient
 from pymongo.errors import ConnectionFailure
 import logging
 from os import getenv
+from models.DbModel.QueryReturnModel import QueryReturnModel
+
 
 logger = logging.getLogger(__name__)
 
@@ -32,4 +34,22 @@ class MongoDbManager:
         if self.client:
             self.client.close()
 
+    def insert_data(self, data: QueryReturnModel):
+        if self.db:
+            collection = self.db[self.collection_name]
+            collection.insert_one(data)
+
+    def insert_many_data(self, data: list[QueryReturnModel]):
+        if self.db:
+            collection = self.db[self.collection_name]
+            
+    def get_data(self):
+        if self.db:
+            collection = self.db[self.collection_name]
+            return collection.find()
+        
+    def get_data_by_store_id(self, id: int):
+        if self.db:
+            collection = self.db[self.collection]
+            return collection.find({"store": id})
     
