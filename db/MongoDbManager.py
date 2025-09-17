@@ -46,8 +46,10 @@ class MongoDbManager:
 
     def get_data(self):
         if self.db:
+            if collection_name:
+                self.collection_name = collection_name
             collection = self.db[self.collection_name]
-            return collection.find()
+            return [QueryReturnModel(**item) for item in collection.find()]
         
     def get_data_by_store_id(self, id: int):
         if self.db:

@@ -105,7 +105,7 @@ class DatabaseManager:
             return [
                 ## Exemplo de Model Pydantic
                 QueryReturnModel(
-                    venda=row[0],
+                    code=row[0],
                     empresa=row[1],
                     tentativas=row[2],
                     guid_web=row[3],
