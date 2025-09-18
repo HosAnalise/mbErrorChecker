@@ -39,7 +39,7 @@ class DatabaseManager:
             "int_bi_crediarios":{"crediarios": "codigo"},
             "int_bi_entregas":{"entregas": "nr_entrega"},
             # "int_bi_ids_web":{""},
-            "int_bi_notas":{"cag_nf": "nr_nota"},
+            "int_bi_notas":{"cab_nf": "nr_nota"},
             "int_bi_vendas": {"caixa": "venda"}
             }
 
