@@ -19,7 +19,6 @@ def update_registers():
                 for key,value in queue.items():
                     for error in errors_list:
                         
-                        
 
                         query = f"""UPDATE 
                                         {key}
@@ -34,5 +33,6 @@ def update_registers():
                         print(query)
 
                        # data_base_manager.execute_query(query)
-
-update_registers()
+if __name__ == "__main__":
+    update_registers()
+    
