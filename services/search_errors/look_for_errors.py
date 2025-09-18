@@ -7,7 +7,7 @@ QUERY_STORE_IDS_TO_CHECK = """
                                 SELECT 
                                     E.CODIGO 
                                 FROM 
-                                    EMPRESA E  
+                                    EMPRESA E
                                 WHERE 
                                     E.STATUS = 'ATIVO'
                             """
