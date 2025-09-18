@@ -4,7 +4,8 @@ from services.search_errors.look_for_errors import Extractor
 from services.update_registers.update_registers import UpdateService
 from services.bussines_logic.error_analysis_service import ErrorAnalysisAgent
 from services.presentation.email_notifier import EmailNotifierService
-
+from services.update_registers.update_registers import update_registers as updater
+from services.presentation.email_notifier import send_email as notifier
 class GraphState(TypedDict):
     """
     Representa o estado do fluxo de trabalho de verificação de erros.

@@ -1,7 +1,7 @@
 from models.ErrorModel.ErrorModel import ErrorModel, ErrorListModel
 from models.DbModel.QueryReturnModel import QueryReturnModel
 from collections import defaultdict
-
+from pydantic_ai.agent import RunContext
 
 
 
@@ -9,7 +9,7 @@ from collections import defaultdict
 class ErrorAnalysisService:   
     
     @staticmethod
-    def group_errors_by_store(errors: list[QueryReturnModel]) -> ErrorListModel:
+    def group_errors_by_store(ctx: RunContext) -> ErrorListModel:
         """
         Group errors by store code.
 
@@ -20,9 +20,13 @@ class ErrorAnalysisService:
             ErrorListModel: Object with store code as key and list of errors as value.
         """
         grouped_errors = defaultdict(list)
+        list_errors = ctx
 
-        for error in errors:
-            grouped_errors[error.code].append(error)
+
+
+        for error in list_errors:
+
+            grouped_errors[error.store].append(error)
 
   
         return ErrorListModel(

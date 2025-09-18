@@ -104,8 +104,7 @@ class Extractor:
 
             if sales_with_errors:
                 formatted_results = db_connection.format_query_result(sales_with_errors,table_name=queue_name,store_id=store_id)
-                data  = self.mongo_manager.insert_many_data(formatted_results)
-                print(data)
+                self.mongo_manager.insert_many_data(formatted_results)
                 
                 
         except Exception as e:
@@ -141,6 +140,7 @@ class Extractor:
             store_ids_to_check = db_connection.execute_query(query=QUERY_STORE_IDS_TO_CHECK)
             store_ids_to_check = [int(row[0]) for row in store_ids_to_check]
 
+        self.mongo_manager.delete_all_collection_data()
         for store_id in store_ids_to_check:
             if store_id == 62:
                 continue
