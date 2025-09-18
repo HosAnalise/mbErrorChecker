@@ -33,7 +33,6 @@ class DatabaseManager:
         self.connection = None
         self.cursor = None
         self.fila_tabela = {
-<<<<<<< HEAD
             # "int_bi_autorizacoes":{"caixa_autorizacoes": "cupom"},
             # # "int_bi_cadastros":{""},
             # # "int_bi_cancelamentos_devolve":{""},
@@ -45,19 +44,6 @@ class DatabaseManager:
             # "int_bi_entregas":{"entregas": "nr_entrega"},
             # # "int_bi_ids_web":{""},
             # "int_bi_notas":{"cab_nf": "nr_nota"},
-=======
-            "int_bi_autorizacoes":{"caixa_autorizacoes": "cupom"},
-            # "int_bi_cadastros":{""},
-            # "int_bi_cancelamentos_devolve":{""},
-            "int_bi_cod_cancelamentos":{"caixa": "venda"},
-            "int_bi_contas_pagar":{"fin_contas_pagar": "codigo"},
-            "int_bi_contasconvenios":{"contasconvenios": "convenio"},
-            "int_bi_contcaixas":{"controledecaixa": "ncaixa"},
-            "int_bi_crediarios":{"crediarios": "codigo"},
-            "int_bi_entregas":{"entregas": "nr_entrega"},
-            # "int_bi_ids_web":{""},
-            "int_bi_notas":{"cab_nf": "nr_nota"},
->>>>>>> c49687074d94f2fc4781aee2108adf8a237ee092
             "int_bi_vendas": {"caixa": "venda"}
             }
 
