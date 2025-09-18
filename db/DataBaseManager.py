@@ -1,7 +1,11 @@
+from datetime import datetime
 import psycopg
 import logging
 from os import getenv
 from models.DbModel.QueryReturnModel import QueryReturnModel
+from dotenv import load_dotenv
+
+load_dotenv()
 
 
 logger = logging.getLogger(__name__)
@@ -49,7 +53,7 @@ class DatabaseManager:
         self.connection = self.db_connection()
         if self.connection:
             self.cursor = self.connection.cursor()
-        return self.connection
+        return self
 
     def __exit__(self, exc_type, exc_value, traceback):
         if self.connection:
@@ -65,11 +69,12 @@ class DatabaseManager:
                 password=getenv("DB_PASSWORD"),
                 host=f"192.168.{self.store}.250" if self.store != 99 else "192.168.99.230",
                 port=getenv("DB_PORT"),
-                connect_timeout=5
+                connect_timeout=10
             )
             return connection
         except Exception as e:
             logger.error(f"Error connecting to the database 192.168.{self.store:02}.250: {e}")
+
             return None
 
     def execute_query(self, query, params=None):
@@ -83,9 +88,10 @@ class DatabaseManager:
         Returns:
             list or None: Query result for SELECT, None otherwise.
         """
-        if not self.cursor:
-            logger.error("No database cursor available.")
-            return None
+        if not self.cursor or not self.connection:
+            logger.error("No database cursor or connection available.")
+            return []
+       
         try:
             self.cursor.execute(query, params)
             if query.strip().lower().startswith("select"):
@@ -99,22 +105,22 @@ class DatabaseManager:
             return None
         
 
-    def format_query_result(self, resultados: list) -> list[QueryReturnModel]:
-
-
-            return [
-                ## Exemplo de Model Pydantic
-                QueryReturnModel(
-                    code=row[0],
-                    empresa=row[1],
-                    tentativas=row[2],
-                    guid_web=row[3],
-                    data_hora_tentativa=row[4],
-                    data_hora_inclusao=row[5],
-                    erro=row[6]
-                )
-                for row in resultados
-            ]
+    def format_query_result(self, resultados: list, table_name: str, store_id: int) -> list[QueryReturnModel]:
+        return [
+            QueryReturnModel(
+                code=row[0],
+                empresa=row[1],
+                tentativas=row[2],
+                guid_web=row[3],
+                data_hora_tentativa=row[4],
+                data_hora_inclusao=row[5],
+                erro=row[6],
+                table_name=table_name,
+                store=store_id,
+                date_column=datetime.now()
+            )
+            for row in resultados
+        ]
                     
 
    
