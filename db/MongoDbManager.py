@@ -4,7 +4,12 @@ from pymongo.errors import ConnectionFailure
 import logging
 from os import getenv
 from models.DbModel.QueryReturnModel import QueryReturnModel
+from dotenv import load_dotenv
+from pymongo.results import InsertOneResult, InsertManyResult
 
+
+
+load_dotenv()
 
 logger = logging.getLogger(__name__)
 
@@ -34,15 +39,26 @@ class MongoDbManager:
         if self.client:
             self.client.close()
 
-    def insert_data(self, data: QueryReturnModel):
+    def insert_data(self, data: QueryReturnModel) -> InsertOneResult | None:
+        """Insere um único documento e retorna o resultado da operação."""
         if self.db:
             collection = self.db[self.collection_name]
-            collection.insert_one(data)
+            # Retorna o resultado que contém o inserted_id
+            return collection.insert_one(data.model_dump())
+        return None
 
-    def insert_many_data(self, data: list[QueryReturnModel]):
+    def insert_many_data(self, data: list[QueryReturnModel]) -> InsertManyResult | None:
+        """Insere múltiplos documentos e retorna o resultado da operação."""
         if self.db:
             collection = self.db[self.collection_name]
-            
+            documents = [item.model_dump() for item in data]
+            # Garante que a lista não esteja vazia para evitar erros
+            if not documents:
+                return None
+            # Retorna o resultado que contém a lista de inserted_ids
+            return collection.insert_many(documents)
+        return None
+
     def get_data(self,collection_name:str)->list[QueryReturnModel]:
         if self.db:
             if collection_name:

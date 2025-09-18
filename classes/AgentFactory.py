@@ -8,6 +8,9 @@ from pydantic_ai.providers.openai import OpenAIProvider
 from os import getenv
 from typing import Type, Optional, List, Union
 from classes.ErrorAnalysisService import ErrorAnalysisService
+from dotenv import load_dotenv
+
+load_dotenv()
 
 
 
@@ -162,18 +165,24 @@ class AgentFactory:
         """
         return Client(api_key=api_key)
                     
-    def create_google_provider(self,client: Client = create_google_client()):
+    def create_google_provider(self,client: Client  = None):
         """Create and return a GoogleProvider.
         Args:
             client (Client): The Google GenAI client.
         """
+        if client is None:
+            client = self.create_google_client()
+
         return GoogleProvider(client=client)
 
-    def create_google_model(self, provider: GoogleProvider = create_google_provider(), model: str = getenv("GOOGLE_MODEL")):
+    def create_google_model(self, provider: GoogleProvider = None, model: str = getenv("GOOGLE_MODEL")):
         """Create and return a GoogleModel.
         Args:
             provider (GoogleProvider): The GoogleProvider instance.
         """
+        if provider is None:
+            provider = self.create_google_provider()
+
         return GoogleModel(
                             provider=provider,
                             model_name=model,
@@ -201,7 +210,7 @@ class AgentFactory:
 
     def create_agent(self, 
                      agent_instructions: str, 
-                     ai_model: Union[GoogleModel, OpenAIChatModel] = create_google_model(), 
+                     ai_model: Union[GoogleModel, OpenAIChatModel] = None, 
                      output_type: Type = ErrorSummaryModel, 
                      toolsets: Optional[List] = None, 
                      **kwargs):
@@ -225,6 +234,8 @@ class AgentFactory:
         Returns:
             Agent: Uma instância do agente, pronta para ser usada.
         """
+        if ai_model is None:
+            ai_model = self.create_google_model()
         if toolsets is None:
             toolsets = []
 
@@ -237,12 +248,15 @@ class AgentFactory:
         )
     
 
-    def create_error_analysis_agent(self,toolsets: list = [ErrorAnalysisService.group_errors_by_store], agent_instructions: str = AGENT_INSTRUCTIONS, ai_model: GoogleModel|OpenAIChatModel = create_google_model(),**kwargs) -> Agent:
+    def create_error_analysis_agent(self,toolsets: list = [ErrorAnalysisService.group_errors_by_store], agent_instructions: str = AGENT_INSTRUCTIONS, ai_model: GoogleModel|OpenAIChatModel = None,**kwargs) -> Agent:
         """Create and return an error analysis agent.
         Args:
             agent_instructions (str): Instructions for the agent.
             ai_model (GoogleModel|OpenAIChatModel): The model to be used by the agent.
         """
+        if ai_model is None:
+            ai_model = self.create_google_model()
+
         return self.create_agent(agent_instructions=agent_instructions, ai_model=ai_model, output=ErrorSummaryModel, toolsets=toolsets, **kwargs)
     
 
