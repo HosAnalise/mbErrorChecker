@@ -42,7 +42,10 @@ class MongoDbManager:
     #         self.client.close()
 
     def insert_data(self, data: QueryReturnModel) -> InsertOneResult | None:
+        
         """Insere um único documento e retorna o resultado da operação."""
+
+        self.delete_all_collection_data()
         if self.db is not None:
             collection = self.db[self.collection_name]
             # Retorna o resultado que contém o inserted_id
@@ -52,20 +55,22 @@ class MongoDbManager:
     def insert_many_data(self, data: list[QueryReturnModel]) -> InsertManyResult | None:
         """Insere múltiplos documentos e retorna o resultado da operação."""
 
+        self.delete_all_collection_data()
+
         if self.db is not None:
             collection = self.db[self.collection_name]
             documents = [item.model_dump() for item in data]
-            print(collection)
             if not documents:
                 return None
             
             return collection.insert_many(documents)
         return None
 
-    def get_data(self,collection_name:str)->list[QueryReturnModel]:
-        if self.db:
+    def get_data(self,collection_name:str = 'mb_error_check')->list[QueryReturnModel]:
+        if self.db is not None:
             if collection_name:
                 self.collection_name = collection_name
+
             collection = self.db[self.collection_name]
             return [QueryReturnModel(**item) for item in collection.find()]
         
@@ -73,4 +78,11 @@ class MongoDbManager:
         if self.db:
             collection = self.db[self.collection]
             return collection.find({"store": id})
-    
+        
+    def delete_all_collection_data(self,collection_name:str = 'mb_error_check'):
+        if self.db is not None:
+            if collection_name:
+                self.collection_name = collection_name
+
+            collection = self.db[self.collection_name]
+            return collection.delete_many({})
