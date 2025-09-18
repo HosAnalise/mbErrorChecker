@@ -6,6 +6,8 @@ from os import getenv
 from models.DbModel.QueryReturnModel import QueryReturnModel
 from dotenv import load_dotenv
 from pymongo.results import InsertOneResult, InsertManyResult
+from pymongo.server_api import ServerApi
+
 
 
 
@@ -20,28 +22,28 @@ class MongoDbManager:
     """
 
     def __init__(self,):
-        self.uri = getenv("MONGO_URI")
+        self.uri = getenv("MONGODB_URI") 
         self.db_name = getenv("MONGO_DB_NAME")
         self.collection_name = getenv("MONGO_COLLECTION_NAME")
-        self.client = None
-        self.db = None
+        self.client = MongoClient(self.uri,server_api=ServerApi('1'))
+        self.db = self.client[self.db_name]
 
-    def __enter__(self):
-        try:
-            self.client = MongoClient(self.uri)
-            self.db = self.client[self.db_name]
+    # def __enter__(self):
+    #     try:
+    #         self.client = MongoClient(self.uri) if not self.client else self.client
+    #         self.db = self.client[self.db_name] if not self.db else self.db
 
-        except ConnectionFailure as e:
-            logger.error(f"Error connecting to MongoDB: {e}")
-        return self.db
+    #     except ConnectionFailure as e:
+    #         logger.error(f"Error connecting to MongoDB: {e}")
+    #     return self.db
 
-    def __exit__(self, exc_type, exc_value, traceback):
-        if self.client:
-            self.client.close()
+    # def __exit__(self, exc_type, exc_value, traceback):
+    #     if self.client:
+    #         self.client.close()
 
     def insert_data(self, data: QueryReturnModel) -> InsertOneResult | None:
         """Insere um único documento e retorna o resultado da operação."""
-        if self.db:
+        if self.db is not None:
             collection = self.db[self.collection_name]
             # Retorna o resultado que contém o inserted_id
             return collection.insert_one(data.model_dump())
@@ -49,13 +51,14 @@ class MongoDbManager:
 
     def insert_many_data(self, data: list[QueryReturnModel]) -> InsertManyResult | None:
         """Insere múltiplos documentos e retorna o resultado da operação."""
-        if self.db:
+
+        if self.db is not None:
             collection = self.db[self.collection_name]
             documents = [item.model_dump() for item in data]
-            # Garante que a lista não esteja vazia para evitar erros
+            print(collection)
             if not documents:
                 return None
-            # Retorna o resultado que contém a lista de inserted_ids
+            
             return collection.insert_many(documents)
         return None
 

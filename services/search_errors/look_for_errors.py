@@ -104,8 +104,9 @@ class Extractor:
 
             if sales_with_errors:
                 formatted_results = db_connection.format_query_result(sales_with_errors,table_name=queue_name,store_id=store_id)
-                for item in formatted_results:
-                    self.mongo_manager.insert_data(item)           
+                data  = self.mongo_manager.insert_many_data(formatted_results)
+                print(data)
+                
                 
         except Exception as e:
             raise Exception(f"Erro ao processar a loja {store_id}: {e}")        
