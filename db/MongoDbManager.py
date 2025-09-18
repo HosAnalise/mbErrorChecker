@@ -55,6 +55,10 @@ class MongoDbManager:
     def insert_many_data(self, data: list[QueryReturnModel]) -> InsertManyResult | None:
         """Insere múltiplos documentos e retorna o resultado da operação."""
 
+<<<<<<< HEAD
+=======
+        self.delete_all_collection_data()
+>>>>>>> 9f0290c54c58237905872aaccbcd1d4b47591ee1
 
         if self.db is not None:
             collection = self.db[self.collection_name]
@@ -84,5 +88,9 @@ class MongoDbManager:
                 self.collection_name = collection_name
 
             collection = self.db[self.collection_name]
+<<<<<<< HEAD
             return collection.delete_many({})
     
+=======
+            return collection.delete_many({})
+>>>>>>> 9f0290c54c58237905872aaccbcd1d4b47591ee1

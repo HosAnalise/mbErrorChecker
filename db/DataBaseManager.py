@@ -35,12 +35,12 @@ class DatabaseManager:
         self.fila_tabela = {
             # "int_bi_autorizacoes":{"caixa_autorizacoes": "cupom"},
             # # "int_bi_cadastros":{""},
-            # # "int_bi_cancelamentos_devolve":{""},
-            # "int_bi_cod_cancelamentos":{"caixa": "venda"},
-            # "int_bi_contas_pagar":{"fin_contas_pagar": "codigo"},
-            # "int_bi_contasconvenios":{"contasconvenios": "convenio"},
+            # # "int_bi_cancelamentos_devolve":{""}, -- coluna da tabela fila guid_web fora de ordem.
+            # # "int_bi_cod_cancelamentos":{"caixa": "venda"}, -- colunas a mais (cliente, convenio e nr_pedido)
+            # # "int_bi_contas_pagar":{"fin_contas_pagar": "codigo"}, -- colunas a mais (parcela e excluir)
+            # # "int_bi_contasconvenios":{"contasconvenios": "convenio"}, -- colunas a mais (convenio e excluir)
             # "int_bi_contcaixas":{"controledecaixa": "ncaixa"},
-            # "int_bi_crediarios":{"crediarios": "codigo"},
+            # # "int_bi_crediarios":{"crediarios": "codigo"}, -- colunas a mais (parcela)
             # "int_bi_entregas":{"entregas": "nr_entrega"},
             # # "int_bi_ids_web":{""},
             # "int_bi_notas":{"cab_nf": "nr_nota"},
