@@ -16,26 +16,29 @@ def update_registers():
             return
         
         grouped_store = erro_analyze.group_errors_by_store(errors_list)
-        
-        for id_store,error in grouped_store.items():         
+        seen = set()
+        for error_model in grouped_store.errors:
+            id_store = error_model.store
+            erros = error_model.error
+            
             with DatabaseManager(store=id_store) as data_base_manager:
-                for error in error:
-                    table_name = error.table_name
-                    if table_name:
-                        for table_name,queue in data_base_manager.fila_tabela.items():
-                            for key,value in queue.items():
-                                for error in errors_list:
-
-                                    query = f"""UPDATE 
-                                                    {key}
-                                                SET 
-                                                    DATA = DATA
-                                                WHERE 
-                                                    {value} = {error.code}                                                                                 
-
-                                    """ if error.table_name.lower() == table_name.lower() else False
-
-                                    print(query)
+                for err in erros:
+                    err_table_name = err.table_name
+                    if err_table_name:
+                        for db_table_name,queue in data_base_manager.fila_tabela.items():
+                            for column_name,column_value in queue.items():
+                                for err_ref in erros:
+                                    if err_ref.table_name.lower() == db_table_name.lower() and err_ref.store == id_store:
+                                        query = f"""UPDATE {column_name}
+                                                    SET DATA = DATA
+                                                    WHERE {column_value} = {err_ref.code} 
+                                                """
+                                        if query:
+                                            print(f"Loja: {id_store}")
+                                            print(query)
+                                        else:
+                                            print(f"LOJA:{id_store} Nenhum erro encontrado!")
+                                                                                                                        
                                 # if query:
                                 # data_base_manager.execute_query(query)
 if __name__ == "__main__":
