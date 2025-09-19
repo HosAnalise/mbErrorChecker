@@ -22,11 +22,16 @@ class ErrorAnalysisService:
         grouped_errors = defaultdict(list)
         list_errors = ctx
 
+<<<<<<< HEAD
+        for error in errors:
+            grouped_errors[error.empresa].append(error)
+=======
 
 
         for error in list_errors:
 
             grouped_errors[error.store].append(error)
+>>>>>>> aa0f29fff87fd11ec2acd0c38ec36129aef8bb7b
 
   
         return ErrorListModel(
