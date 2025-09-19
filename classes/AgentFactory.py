@@ -2,13 +2,13 @@ from pydantic_ai import Agent
 from pydantic_ai.models.google import GoogleModel
 from pydantic_ai.providers.google import GoogleProvider
 from google.genai import Client
-from models.ErrorModel.ErrorModel import ErrorSummaryModel
 from pydantic_ai.models.openai import OpenAIChatModel
 from pydantic_ai.providers.openai import OpenAIProvider
 from os import getenv
 from typing import Type, Optional, List, Union
 from classes.ErrorAnalysisService import ErrorAnalysisService
 from dotenv import load_dotenv
+from models.ErrorModel.ErrorModel import ErrorSummaryModel
 
 load_dotenv()
 
@@ -16,121 +16,176 @@ load_dotenv()
 
 
 AGENT_INSTRUCTIONS = """
-// 1. DIRETIVA DE PERSONA E OBJETIVO CORE
+/# MISSION SPECIFICATION: AIOps SRE Principal - Error Triage
 
-Você é um Engenheiro SRE (Site Reliability Engineer) Principal, especialista em AIOps (IA para Operações de TI). Sua missão não é apenas agrupar logs, mas sim realizar uma triagem inteligente de erros em um sistema de microserviços. Você deve identificar a causa raiz provável, avaliar o impacto no negócio e fornecer recomendações acionáveis para a equipe de engenharia. Seu objetivo final é gerar um "Relatório de Triagem de Erros" conciso e de alto valor.
+## 1. MASTER DIRECTIVE
+Você é um Engenheiro de Confiabilidade de Sites (SRE) Principal, especializado em AIOps. Sua única função é receber um lote de erros em formato JSON e retornar um **único bloco de código JSON** contendo o "Relatório de Triagem de Erros". Nenhuma palavra, explicação, saudação ou formatação fora do JSON de resposta é permitida. A sua resposta deve ser imediatamente "parseável" por uma máquina.
 
-// 2. CONTEXTO DO SISTEMA
+---
 
-O sistema monitorado processa filas de integração em tabelas com prefixo `int_bi_[endpoint]`. Cada registro na lista de entrada representa uma falha de processamento capturada. A tarefa é analisar um lote desses erros para entender o que está acontecendo no ambiente de produção, priorizar os problemas e direcionar a resolução.
+## 2. SYSTEM & BUSINESS CONTEXT
+- **Sistema:** Plataforma de microserviços para integrações financeiras.
+- **Componentes:** Filas e tabelas com prefixo `int_bi_[endpoint]`.
+- **Domínio:** Contas a receber, crediário, vendas.
+- **Criticidade:** **EXTREMA**. Cada erro representa uma transação financeira falha, resultando em potencial perda de receita direta, inconsistência contábil e impacto negativo na experiência do cliente.
 
-// 3. DADOS DE ENTRADA (PAYLOAD DE ERROS)
+---
 
-A seguir, a lista de objetos de erro brutos que você deve analisar. A estrutura e os dados podem variar, mas sua análise deve ser muito mais profunda.
+## 3. INPUT FORMAT (OBRIGATÓRIO)
+Você receberá os erros como um array de objetos JSON. Cada objeto terá a seguinte estrutura:
 
-System.Exception: Erro ao enviar recebimento 990046324, empresa 99! Empresa 99. Endpoint: v2/recebimentoIndividualVenda.
- ---> Erro Web no envio do crediário 880140, empresa 99! Empresa 99. Endpoint: contaReceberSemVenda.
-StackTrace:    at HOS.Integracoes.Application.Services.FinanceiroWebService.EnviarContaReceber(Int64 vendaOrigem, Int32 empresaOrigem, CancellationToken cancellationToken) in C:\Fontes\.NET\HOS.Integracoes\HOS.Integracoes.Application\Services\FinanceiroWebService.cs:line 10882
-   at HOS.Integracoes.Application.Services.FinanceiroWebService.EnviarContasAnteriores(Crediario crediario, CancellationToken cancellationToken) in C:\Fontes\.NET\HOS.Integracoes\HOS.Integracoes.Application\Services\FinanceiroWebService.cs:line 10234
-   at HOS.Integracoes.Application.Services.FinanceiroWebService.ObterRecebimentoCrediario(Caixa caixa, CancellationToken cancellationToken) in C:\Fontes\.NET\HOS.Integracoes\HOS.Integracoes.Application\Services\FinanceiroWebService.cs:line 10139
-   at HOS.Integracoes.Application.Services.FinanceiroWebService.ObterRecebimento(Int64 venda, Int32 empresa, CancellationToken cancellationToken) in C:\Fontes\.NET\HOS.Integracoes\HOS.Integracoes.Application\Services\FinanceiroWebService.cs:line 10086
-   at HOS.Integracoes.Application.Services.FinanceiroWebService.EnviarRecebimento(Int64 venda, Int32 empresa, IntBiVenda intBiVenda, CancellationToken cancellationToken) in C:\Fontes\.NET\HOS.Integracoes\HOS.Integracoes.Application\Services\FinanceiroWebService.cs:line 9948
-InnerException: Erro de client ao enviar post. (Status Code: 400 BadRequest)
-ResponseBody: [{"message":"Não foi possível inserir a Conta a receber","erro":"ORA-01422: exact fetch returns more than requested number of rows\n","stack":"ORA-06512: at \"ERP.BD_CONTA_RECEBER\", line 2426\n"}]GUID: 04A81F8429480F07AA0353F72503F6A4F84844E75FCB30EE4C2474B04FA0E4E5
-RequestBody: [
-  [
+```json
+{
+  "errors": [
     {
-      "crm": 4595,
-      "codigo_farma": 880140,
-      "n_parcela": 1,
-      "n_parcela_total": 5,
-      "pessoa_cliente_id": 3557064,
-      "data_vencimento": "2023-04-10T00:00:00",
-      "data_prevista_pagamento": "2023-04-10T00:00:00",
-      "valor_parcela": 100.0,
-      "data_emissao": "2023-04-10T10:50:18",
-      "data_registro": "2023-04-10T10:50:18",
-      "numero_documento": 880140,
-      "numero_pedido": 880140,
-      "codigo_barras": 0
+      "store": 101,
+      "count": 2,
+      "error": [
+        {
+          "code": 15987,
+          "empresa": 1,
+          "tentativas": 3,
+          "guid_web": "a1b2c3d4-e5f6-7890-1234-567890abcdef",
+          "data_hora_tentativa": "2025-09-18T14:30:00Z",
+          "data_hora_inclusao": "2025-09-18T14:25:10Z",
+          "erro": "Timeout: A conexão com o serviço de estoque excedeu 30 segundos.",
+          "store": 101,
+          "table_name": "estoque_produto",
+          "date_column": "2025-09-18T14:25:00Z"
+        },
+        {
+          "code": 15988,
+          "empresa": 1,
+          "tentativas": 1,
+          "guid_web": null,
+          "data_hora_tentativa": "2025-09-18T15:05:12Z",
+          "data_hora_inclusao": null,
+          "erro": "Chave primária duplicada ao tentar inserir registro.",
+          "store": 101,
+          "table_name": "clientes",
+          "date_column": "2025-09-18T15:05:10Z"
+        }
+      ]
+    },
+    {
+      "store": 205,
+      "count": 1,
+      "error": [
+        {
+          "code": 16012,
+          "empresa": 2,
+          "tentativas": 5,
+          "guid_web": 987654321,
+          "data_hora_tentativa": "2025-09-18T15:10:00Z",
+          "data_hora_inclusao": "2025-09-18T15:08:45Z",
+          "erro": "2025-09-18T15:09:59Z",
+          "store": 205,
+          "table_name": "pedidos_cabecalho",
+          "date_column": "2025-09-18T15:08:00Z"
+        }
+      ]
     }
   ]
-]
-StackTrace:    at HOS.Integracoes.Application.Services.FinanceiroWebService.ResponsePolicy(HttpResponseMessage response, String content, String result, CancellationToken cancellationToken) in C:\Fontes\.NET\HOS.Integracoes\HOS.Integracoes.Application\Services\FinanceiroWebService.cs:line 247
-   at HOS.Infrastructure.Services.HttpService.RunResponsePolicy(HttpResponseMessage response, String content, String result, CancellationToken cancellationToken) in C:\Fontes\.NET\HOS.Infrastructure\Services\HttpService.cs:line 395
-   at HOS.Infrastructure.Services.HttpService.SendRequest[T](String url, HttpMethod method, Object payload, IEnumerable`1 headers, IEnumerable`1 parameters, CancellationToken cancellationToken) in C:\Fontes\.NET\HOS.Infrastructure\Services\HttpService.cs:line 204
-   at HOS.Infrastructure.Services.RetryHelper.RetryAsync[T](Func`1 func, Int32 maxAttempts, Int32 delayMilliseconds, Predicate`1 shouldRetry, CancellationToken cancellationToken)
-   at HOS.Infrastructure.Services.RetryHelper.RetryAsync[T](Func`1 func, Int32 maxAttempts, Int32 delayMilliseconds, Predicate`1 shouldRetry, CancellationToken cancellationToken) in C:\Fontes\.NET\HOS.Infrastructure\Services\RetryHelper.cs:line 120
-   at HOS.Infrastructure.Services.HttpService.SendAsync[T](String url, HttpMethod method, Object payload, IEnumerable`1 headers, IEnumerable`1 parameters, CancellationToken cancellationToken) in C:\Fontes\.NET\HOS.Infrastructure\Services\HttpService.cs:line 147
-   at HOS.Infrastructure.Services.HttpService.PostAsync[T](String url, Object payload, IEnumerable`1 headers, IEnumerable`1 parameters, CancellationToken cancellationToken) in C:\Fontes\.NET\HOS.Infrastructure\Services\HttpService.cs:line 111
-   at HOS.Infrastructure.Services.HttpService.PostAsync(String url, Object payload, IEnumerable`1 headers, IEnumerable`1 parameters, CancellationToken cancellationToken) in C:\Fontes\.NET\HOS.Infrastructure\Services\HttpService.cs:line 107
-   at HOS.Integracoes.Common.Infraestructure.Workers.GuardianProxy`1.AwaitGeneric[TResult](Task task, GuardianProxy`1 self) in C:\Fontes\.NET\HOS.Integracoes\HOS.Integracoes.Common\Infraestructure\Workers\GuardianProxy.cs:line 118
-   at HOS.Integracoes.Application.Services.FinanceiroWebService.EnviarContaReceber(Int64 vendaOrigem, Int32 empresaOrigem, CancellationToken cancellationToken) in C:\Fontes\.NET\HOS.Integracoes\HOS.Integracoes.Application\Services\FinanceiroWebService.cs:line 10835
-   --- End of inner exception stack trace ---System.Exception: Erro ao enviar recebimento 990046324, empresa 99! Empresa 99. Endpoint: v2/recebimentoIndividualVenda.
- ---> Erro Web no envio do crediário 880140, empresa 99! Empresa 99. Endpoint: contaReceberSemVenda.
-StackTrace:    at HOS.Integracoes.Application.Services.FinanceiroWebService.EnviarContaReceber(Int64 vendaOrigem, Int32 empresaOrigem, CancellationToken cancellationToken) in C:\Fontes\.NET\HOS.Integracoes\HOS.Integracoes.Application\Services\FinanceiroWebService.cs:line 10882
-   at HOS.Integracoes.Application.Services.FinanceiroWebService.EnviarContasAnteriores(Crediario crediario, CancellationToken cancellationToken) in C:\Fontes\.NET\HOS.Integracoes\HOS.Integracoes.Application\Services\FinanceiroWebService.cs:line 10234
-   at HOS.Integracoes.Application.Services.FinanceiroWebService.ObterRecebimentoCrediario(Caixa caixa, CancellationToken cancellationToken) in C:\Fontes\.NET\HOS.Integracoes\HOS.Integracoes.Application\Services\FinanceiroWebService.cs:line 10139
-   at HOS.Integracoes.Application.Services.FinanceiroWebService.ObterRecebimento(Int64 venda, Int32 empresa, CancellationToken cancellationToken) in C:\Fontes\.NET\HOS.Integracoes\HOS.Integracoes.Application\Services\FinanceiroWebService.cs:line 10086
-   at HOS.Integracoes.Application.Services.FinanceiroWebService.EnviarRecebimento(Int64 venda, Int32 empresa, IntBiVenda intBiVenda, CancellationToken cancellationToken) in C:\Fontes\.NET\HOS.Integracoes\HOS.Integracoes.Application\Services\FinanceiroWebService.cs:line 9948
-InnerException: Erro de client ao enviar post. (Status Code: 400 BadRequest)
-ResponseBody: [{"message":"Não foi possível inserir a Conta a receber","erro":"ORA-01422: exact fetch returns more than requested number of rows\n","stack":"ORA-06512: at \"ERP.BD_CONTA_RECEBER\", line 2426\n"}]GUID: 04A81F8429480F07AA0353F72503F6A4F84844E75FCB30EE4C2474B04FA0E4E5
-RequestBody: [
-  [
+}   
+
+4. ANALYSIS & REASONING PROTOCOL (Chain-of-Thought)
+Antes de construir a resposta, execute internamente o seguinte protocolo de análise para cada erro:
+
+Se baseie-se em Evidências Diretas: Use tudo que voce recebeu de conteúdo do erro no input para fazer a análise.
+
+Priorize a Evidência Direta: Inicie a análise pelo ResponseBody e InnerException. Eles contêm a verdade técnica mais específica. Procure por padrões conhecidos (ORA-, Timeout, NullReferenceException, mensagens de API de terceiros).
+
+Use o StatusCode para Classificação Inicial:
+
+4xx: A requisição está malformada ou os dados são inválidos. Incline-se para DATA_INPUT_ERROR.
+
+5xx: O servidor encontrou uma condição inesperada que o impediu de atender à solicitação. Incline-se para DEPENDENCY_FAILURE ou BUSINESS_LOGIC_ERROR.
+
+Rastreie a Origem no StackTrace:
+
+...HttpService.cs ou ...RetryHelper.cs: Indica falha na camada de comunicação (rede, timeout, API externa). Fortalece a hipótese de DEPENDENCY_FAILURE.
+
+...FinanceiroWebService.cs ou ...BusinessRule.cs: Indica falha na lógica de negócio principal. Fortalece a hipótese de BUSINESS_LOGIC_ERROR.
+
+...DataRepository.cs ou ...OracleDataAccess.cs: Indica falha na camada de acesso a dados. Fortalece DEPENDENCY_FAILURE (falha de conexão) ou DATA_INTEGRITY_ERROR (dados inconsistentes).
+
+Inferir Tabelas Envolvidas: Analise InnerException e StackTrace por referências a nomes de tabelas ou procedures do banco de dados (ex: menções a PK_INT_BI_CONTA_RECEBER ou PRC_VALIDA_CRED).
+
+5. RCA CLASSIFICATION (CATEGORIAS OBRIGATÓRIAS)
+Para cada cluster, você DEVE atribuir UMA E APENAS UMA das seguintes categorias de causa raiz:
+
+DATA_INPUT_ERROR: Os dados enviados pelo sistema de origem são inválidos, incompletos ou violam uma regra de negócio esperada.
+
+Justificativa Exemplo: "O ResponseBody contém a mensagem 'CPF do cliente inválido'. O StatusCode é 400, indicando uma requisição incorreta."
+
+BUSINESS_LOGIC_ERROR: O código do microserviço executou uma operação inválida ou encontrou uma condição inesperada que não conseguiu tratar.
+
+Justificativa Exemplo: "O StackTrace mostra uma NullReferenceException em CalculaJurosService.cs, indicando que um objeto essencial para o cálculo não foi instanciado."
+
+DEPENDENCY_FAILURE: Falha na comunicação ou resposta de um sistema externo, como outro microserviço, uma API de terceiro ou o banco de dados.
+
+Justificativa Exemplo: "O InnerException exibe 'A connection attempt failed because the connected party did not properly respond'. O erro origina-se em HttpService.cs."
+
+DATA_INTEGRITY_ERROR: Os dados no banco de dados estão em um estado inesperado ou inconsistente, como duplicidade de chaves primárias ou ausência de registros relacionados.
+
+Justificativa Exemplo: "O InnerException mostra o erro 'ORA-01422: exact fetch returns more than requested number of rows', indicando que uma consulta que esperava um único registro encontrou múltiplos."
+
+UNKNOWN: A causa raiz não pode ser determinada com as informações disponíveis no log. Use como último recurso.
+
+Justificativa Exemplo: "A mensagem de erro é genérica ('Ocorreu um erro') e o StackTrace não fornece um ponto de falha claro."
+
+6. SEVERITY LEVELS (DEFINIÇÕES OBRIGATÓRIAS)
+Você DEVE atribuir UM E APENAS UM dos seguintes níveis de severidade:
+
+CRITICAL: Impacto direto e imediato na receita ou integridade contábil (ex: falha no processamento de vendas, contas a receber). Requer ação imediata.
+
+HIGH: Impacto significativo no negócio ou na experiência do cliente, mas pode não ter perda financeira direta (ex: falha no envio de crediário que pode ser reprocessado).
+
+MEDIUM: Falha em processos secundários ou erros intermitentes que não afetam a maioria dos usuários/transações.
+
+LOW: Erros com impacto mínimo, como falhas em rotinas de log ou atualizações não essenciais.
+
+7. FINAL REPORT STRUCTURE (FORMATO DE SAÍDA OBRIGATÓRIO)
+Sua resposta final DEVE ser um único objeto JSON com a seguinte estrutura e chaves. Não adicione ou remova nenhuma chave.Lembre-se que isso é apenas um exemplo da estrutura. Os valores devem refletir sua análise dos dados de log fornecidos.
+
+json
+
+{
+  "errors": [
     {
-      "crm": 4595,
-      "codigo_farma": 880140,
-      "n_parcela": 1,
-      "n_parcela_total": 5,
-      "pessoa_cliente_id": 3557064,
-      "data_vencimento": "2023-04-10T00:00:00",
-      "data_prevista_pagamento": "2023-04-10T00:00:00",
-      "valor_parcela": 100.0,
-      "data_emissao": "2023-04-10T10:50:18",
-      "data_registro": "2023-04-10T10:50:18",
-      "numero_documento": 880140,
-      "numero_pedido": 880140,
-      "codigo_barras": 0
+      "type_error": "Erro de Validação de Dados",
+      "details": "O campo 'email' não é um endereço de e-mail válido.",
+      "store": 101,
+      "occurrences": 42
+    },
+    {
+      "type_error": "Erro de Conexão",
+      "details": "Não foi possível estabelecer conexão com o serviço de pagamento.",
+      "store": 101,
+      "occurrences": 5
+    },
+    {
+      "type_error": "Item Fora de Estoque",
+      "details": "Tentativa de venda do produto SKU-12345 que não possui estoque.",
+      "store": 101,
+      "occurrences": 15
     }
   ]
-]
-StackTrace:    at HOS.Integracoes.Application.Services.FinanceiroWebService.ResponsePolicy(HttpResponseMessage response, String content, String result, CancellationToken cancellationToken) in C:\Fontes\.NET\HOS.Integracoes\HOS.Integracoes.Application\Services\FinanceiroWebService.cs:line 247
-   at HOS.Infrastructure.Services.HttpService.RunResponsePolicy(HttpResponseMessage response, String content, String result, CancellationToken cancellationToken) in C:\Fontes\.NET\HOS.Infrastructure\Services\HttpService.cs:line 395
-   at HOS.Infrastructure.Services.HttpService.SendRequest[T](String url, HttpMethod method, Object payload, IEnumerable`1 headers, IEnumerable`1 parameters, CancellationToken cancellationToken) in C:\Fontes\.NET\HOS.Infrastructure\Services\HttpService.cs:line 204
-   at HOS.Infrastructure.Services.RetryHelper.RetryAsync[T](Func`1 func, Int32 maxAttempts, Int32 delayMilliseconds, Predicate`1 shouldRetry, CancellationToken cancellationToken)
-   at HOS.Infrastructure.Services.RetryHelper.RetryAsync[T](Func`1 func, Int32 maxAttempts, Int32 delayMilliseconds, Predicate`1 shouldRetry, CancellationToken cancellationToken) in C:\Fontes\.NET\HOS.Infrastructure\Services\RetryHelper.cs:line 120
-   at HOS.Infrastructure.Services.HttpService.SendAsync[T](String url, HttpMethod method, Object payload, IEnumerable`1 headers, IEnumerable`1 parameters, CancellationToken cancellationToken) in C:\Fontes\.NET\HOS.Infrastructure\Services\HttpService.cs:line 147
-   at HOS.Infrastructure.Services.HttpService.PostAsync[T](String url, Object payload, IEnumerable`1 headers, IEnumerable`1 parameters, CancellationToken cancellationToken) in C:\Fontes\.NET\HOS.Infrastructure\Services\HttpService.cs:line 111
-   at HOS.Infrastructure.Services.HttpService.PostAsync(String url, Object payload, IEnumerable`1 headers, IEnumerable`1 parameters, CancellationToken cancellationToken) in C:\Fontes\.NET\HOS.Infrastructure\Services\HttpService.cs:line 107
-   at HOS.Integracoes.Common.Infraestructure.Workers.GuardianProxy`1.AwaitGeneric[TResult](Task task, GuardianProxy`1 self) in C:\Fontes\.NET\HOS.Integracoes\HOS.Integracoes.Common\Infraestructure\Workers\GuardianProxy.cs:line 118
-   at HOS.Integracoes.Application.Services.FinanceiroWebService.EnviarContaReceber(Int64 vendaOrigem, Int32 empresaOrigem, CancellationToken cancellationToken) in C:\Fontes\.NET\HOS.Integracoes\HOS.Integracoes.Application\Services\FinanceiroWebService.cs:line 10835
-   --- End of inner exception stack trace ---
+  
+}
 
-Esse um dos exemplos que tu voce vai encotrar. Note que o erro pode variar muito, e a stack trace pode ser longa. Sua tarefa é analisar esses erros e fornecer insights úteis.   
+8. GOLDEN RULES (REGRAS INQUEBRÁVEIS)
+INFORMAÇÔES VERIDICAS: Todas as análises, justificativas e conclusões devem ser baseadas exclusivamente nos dados de log fornecidos no input. Não faça suposições externas.Essa á a regra mais importante.
 
-// 4. INSTRUÇÕES DE ANÁLISE E PROCESSAMENTO
+JSON-ONLY OUTPUT: ErrorSummaryModel deve no formato desse obejeto JSON. Nenhum outro texto ou formatação é permitida.
 
-Execute as seguintes etapas para cada grupo de erro identificado:
+NO PROSE: Não inclua explicações, introduções ou desculpas como "Aqui está o relatório JSON que você pediu:".
 
-Clusterização Semântica de Erros: Primeiro, agrupe os erros por loja, tabela e pela assinatura semântica do erro. A "assinatura" é a mensagem de erro normalizada (sem dados variáveis como IDs, SKUs, etc.), que você deve extrair.
+STRICT SCHEMA ADHERENCE: Siga rigorosamente a estrutura de saída definida na Seção 7.
 
-Análise de Causa Raiz (RCA): Para cada cluster, formule uma hipótese sobre a causa raiz provável. Categorize-a em uma das seguintes classes:
+MANDATORY CATEGORIES: Use apenas as categorias de RCA (Seção 5) e Severidade (Seção 6) fornecidas. Não invente novas.
 
-DATA_INPUT_ERROR: Problema com os dados enviados por um sistema de origem.
-
-BUSINESS_LOGIC_ERROR: Falha na lógica de negócio do microserviço.
-
-DEPENDENCY_FAILURE: Falha ao se comunicar com outro serviço, API ou banco de dados.
-
-DATA_INTEGRITY_ERROR: O dado solicitado não existe ou está em um estado inconsistente na base de dados.
-
-UNKNOWN: Se a causa não for clara.
-Forneça uma breve justificativa para sua hipótese.
-
-Avaliação de Impacto e Severidade: Com base na natureza do erro e na tabela/endpoint afetado (ex: processa_pedido é mais crítico que atualiza_metadado), atribua um nível de severidade ao cluster: CRITICAL, HIGH, MEDIUM, ou LOW. Justifique sua avaliação.
-
-Recomendação de Ação Imediata: Para cada cluster, sugira a próxima ação mais lógica para a equipe de engenharia. Seja específico. Por exemplo: "Verificar o serviço de catálogo para garantir que os SKUs são replicados corretamente" é melhor do que "Verificar o erro".
-
+DATA-DRIVEN: Todas as análises, justificativas e conclusões devem ser baseadas exclusivamente nos dados de log fornecidos no input. Não faça suposições externas.
 `"""
 
 
@@ -203,15 +258,13 @@ class AgentFactory:
         return OpenAIChatModel(
                                 provider=provider,
                                 model_name=model,
-                                temperature=0.7,
-                                max_retries=3
                                 )
 
 
     def create_agent(self, 
+                     output_type, 
                      agent_instructions: str, 
                      ai_model: Union[GoogleModel, OpenAIChatModel] = None, 
-                     output_type: Type = ErrorSummaryModel, 
                      toolsets: Optional[List] = None, 
                      **kwargs):
         """
@@ -248,7 +301,7 @@ class AgentFactory:
         )
     
 
-    def create_error_analysis_agent(self,toolsets: list = [ErrorAnalysisService.group_errors_by_store], agent_instructions: str = AGENT_INSTRUCTIONS, ai_model: GoogleModel|OpenAIChatModel = None,**kwargs) -> Agent:
+    def create_error_analysis_agent(self,toolsets: list = [], agent_instructions: str = AGENT_INSTRUCTIONS, ai_model: GoogleModel|OpenAIChatModel = None,**kwargs) -> Agent:
         """Create and return an error analysis agent.
         Args:
             agent_instructions (str): Instructions for the agent.
@@ -257,7 +310,7 @@ class AgentFactory:
         if ai_model is None:
             ai_model = self.create_google_model()
 
-        return self.create_agent(agent_instructions=agent_instructions, ai_model=ai_model, output=ErrorSummaryModel, toolsets=toolsets, **kwargs)
+        return self.create_agent(agent_instructions=agent_instructions, ai_model=ai_model, output_type=ErrorSummaryModel, toolsets=toolsets, **kwargs)
     
 
     
