@@ -22,7 +22,7 @@ class ErrorAnalysisService:
         grouped_errors = defaultdict(list)
 
         for error in errors:
-            grouped_errors[error.code].append(error)
+            grouped_errors[error.empresa].append(error)
 
   
         return ErrorListModel(
