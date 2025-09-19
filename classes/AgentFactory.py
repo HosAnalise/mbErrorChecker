@@ -8,7 +8,7 @@ from os import getenv
 from typing import Type, Optional, List, Union
 from classes.ErrorAnalysisService import ErrorAnalysisService
 from dotenv import load_dotenv
-from models.ErrorModel.ErrorModel import ErrorSummaryModel
+from models.ErrorModel.ErrorModel import ErrorDetailModel,ErrorSummaryModel
 
 load_dotenv()
 
@@ -35,8 +35,6 @@ Você é um Engenheiro de Confiabilidade de Sites (SRE) Principal, especializado
 Você receberá os erros como um array de objetos JSON. Cada objeto terá a seguinte estrutura:
 
 ```json
-{
-  "errors": [
     {
       "store": 101,
       "count": 2,
@@ -66,27 +64,8 @@ Você receberá os erros como um array de objetos JSON. Cada objeto terá a segu
           "date_column": "2025-09-18T15:05:10Z"
         }
       ]
-    },
-    {
-      "store": 205,
-      "count": 1,
-      "error": [
-        {
-          "code": 16012,
-          "empresa": 2,
-          "tentativas": 5,
-          "guid_web": 987654321,
-          "data_hora_tentativa": "2025-09-18T15:10:00Z",
-          "data_hora_inclusao": "2025-09-18T15:08:45Z",
-          "erro": "2025-09-18T15:09:59Z",
-          "store": 205,
-          "table_name": "pedidos_cabecalho",
-          "date_column": "2025-09-18T15:08:00Z"
-        }
-      ]
     }
-  ]
-}   
+
 
 4. ANALYSIS & REASONING PROTOCOL (Chain-of-Thought)
 Antes de construir a resposta, execute internamente o seguinte protocolo de análise para cada erro:
@@ -154,19 +133,52 @@ json
   "errors": [
     {
       "type_error": "Erro de Validação de Dados",
-      "details": "O campo 'email' não é um endereço de e-mail válido.",
+      "details": {
+          "code": 15988,
+          "empresa": 1,
+          "tentativas": 1,
+          "guid_web": null,
+          "data_hora_tentativa": "2025-09-18T15:05:12Z",
+          "data_hora_inclusao": null,
+          "erro": "Chave primária duplicada ao tentar inserir registro.",
+          "store": 101,
+          "table_name": "clientes",
+          "date_column": "2025-09-18T15:05:10Z"
+        },
       "store": 101,
       "occurrences": 42
     },
     {
       "type_error": "Erro de Conexão",
-      "details": "Não foi possível estabelecer conexão com o serviço de pagamento.",
+      "details": "{
+          "code": 15988,
+          "empresa": 1,
+          "tentativas": 1,
+          "guid_web": null,
+          "data_hora_tentativa": "2025-09-18T15:05:12Z",
+          "data_hora_inclusao": null,
+          "erro": "Chave primária duplicada ao tentar inserir registro.",
+          "store": 101,
+          "table_name": "clientes",
+          "date_column": "2025-09-18T15:05:10Z"
+        },
       "store": 101,
       "occurrences": 5
     },
     {
       "type_error": "Item Fora de Estoque",
-      "details": "Tentativa de venda do produto SKU-12345 que não possui estoque.",
+      "details": {
+          "code": 15988,
+          "empresa": 1,
+          "tentativas": 1,
+          "guid_web": null,
+          "data_hora_tentativa": "2025-09-18T15:05:12Z",
+          "data_hora_inclusao": null,
+          "erro": "Chave primária duplicada ao tentar inserir registro.",
+          "store": 101,
+          "table_name": "clientes",
+          "date_column": "2025-09-18T15:05:10Z"
+        },
       "store": 101,
       "occurrences": 15
     }

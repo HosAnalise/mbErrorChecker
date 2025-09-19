@@ -16,7 +16,7 @@ class ErrorListModel(BaseModel):
 
 class ErrorDetailModel(BaseModel):
     type_error: str = Field(..., description="Tipo do erro")
-    details: ErrorModel = Field(..., description="Detalhes do erro")
+    details: QueryReturnModel = Field(..., description="Detalhes do erro")
     store: int = Field(..., description="Loja que o erro pertence")
     occurrences: int = Field(..., description="Quantidade de ocorrências do erro")
     table_name: str = Field(..., description="Nome da tabela onde o erro ocorreu")
