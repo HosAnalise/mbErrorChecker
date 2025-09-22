@@ -1,13 +1,19 @@
 from classes.AgentFactory import AgentFactory
 from db.MongoDbManager import MongoDbManager
-from classes.ErrorAnalysisService import ErrorAnalysisService
 import backoff
 from pydantic_ai import Agent
-from models.ErrorModel.ErrorModel import ErrorModel,ErrorDetailModel
+from models.ErrorModel.ErrorModel import ErrorModel,ErrorDetailModel, ErrorListModel,ErrorSummaryModel,AnalysisResponseModel
 from drain3 import TemplateMiner
 from drain3.template_miner_config import TemplateMinerConfig
 import re
 import unicodedata
+import logging
+from collections import defaultdict
+from pydantic_ai.agent import RunContext
+
+logging.basicConfig(level=logging.INFO) 
+
+
 
 PATTERNS_SPECIFIC = [
     (re.compile(r'\b[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}\b'), '{GUID}'),
@@ -40,10 +46,9 @@ PATTERNS_GENERIC = [
 class ErrorAnalysis:
     """Classe para análise de erros usando um agente."""
 
-    def __init__(self):
-        self.mongo_manager = MongoDbManager()
-        self.agent_factory = AgentFactory()
-        self.error_analysis_service = ErrorAnalysisService()
+    def __init__(self,mongo_manager: MongoDbManager = None, agent: Agent = None):
+        self.mongo_manager = mongo_manager or MongoDbManager()
+        self.analyse_agent = agent or AgentFactory().create_error_analysis_agent()
         self.drain_config_template = TemplateMinerConfig()
         
         self.drain_config_template.drain_depth = 4
@@ -52,29 +57,67 @@ class ErrorAnalysis:
 
         self.template_miner = TemplateMiner(config = self.drain_config_template)    
 
+
+
+
+    def group_errors_by_store(self, ctx: RunContext) -> ErrorListModel:
+        """
+        Group errors by store code.
+
+        Args:
+            errors (list[QueryReturnModel]): List of query return models.
+
+        Returns:
+            ErrorListModel: Object with store code as key and list of errors as value.
+        """
+
+        try:
+            grouped_errors = defaultdict(list)
+            list_errors = ctx
+
+
+
+            for error in list_errors:
+
+                grouped_errors[error.store].append(error)
+
+    
+            return ErrorListModel(
+                errors=[
+                    ErrorModel(
+                        error=value,
+                        store=key,
+                        count=len(value)
+                    ) for key,value in grouped_errors.items()
+                ]
+            )    
+        except Exception as e:
+            logging.error("Erro ao agrupar erros por loja: %s", e, exc_info=True)
+            return ErrorListModel(errors=[])
+        
     def sanitize_log(self, log: str) -> str:
+
         """Sanitiza o log removendo caracteres especiais e espaços extras."""
-        sanitized_content = unicodedata.normalize('NFKC', log)
+        try:
+            sanitized_content = unicodedata.normalize('NFKC', log)
 
-        sanitized_content = re.sub(r'\s+', ' ', sanitized_content).strip()
+            sanitized_content = re.sub(r'\s+', ' ', sanitized_content).strip()
 
-        return sanitized_content  
-    
-
-    
+            return sanitized_content
+        except Exception as e:
+            logging.error("Erro ao sanitizar log: %s", e, exc_info=True)
+            return log
 
 
     @backoff.on_exception(backoff.expo, Exception,max_tries=20)
-    def execute_agent(self, agent: Agent, data: ErrorModel) -> ErrorDetailModel:
+    def execute_agent(self, agent: Agent, data: dict) -> AnalysisResponseModel:
         """Executa o agente de análise de erros."""
+        try:
+            return agent.run_sync(data).output
+        except Exception as e:
+            logging.error("Erro ao executar o agente: %s", e, exc_info=True)
+            raise e
         
-        return agent.run_sync(data.model_dump()).output
-    
-
-
-
-
-
     def regex_sanitize_pro(self,text: str) -> str:
         """
         Sanitiza o texto usando uma abordagem ordenada e eficiente de expressões regulares.
@@ -96,73 +139,104 @@ class ErrorAnalysis:
                 sanitized_text = pattern.sub(placeholder, sanitized_text)
                 
         except re.error as e:
-            # Em um sistema real, aqui você logaria o erro.
-            print(f"Erro na expressão regular: {e}")
-            return text # Retorna o texto original em caso de erro
+            logging.error(f"Erro na expressão regular: {e}")
+            return text 
 
         return sanitized_text
 
-    def make_fingerprint(self, data: ErrorModel) -> str:
+    def make_fingerprint(self, data: ErrorModel) -> list[dict]:
         """
-        Normaliza uma string de erro para criar um fingerprint.
-        
-        """
+        Normaliza e agrupa logs de erro para criar fingerprints únicos.
 
+        Esta função processa uma lista de erros, sanitiza cada entrada e usa o 
+        TemplateMiner para agrupar logs semelhantes. Ela garante que cada cluster 
+        de log (fingerprint) seja adicionado à lista de resultados apenas uma vez.
 
+        Args:
+            data: Um objeto ErrorModel contendo os dados do erro, incluindo a loja e as mensagens.
 
-
-  
+        Returns:
+            Uma lista de dicionários, onde cada dicionário representa um cluster de log único.
+            Retorna uma lista vazia se não houver erros para processar ou se a loja não for a alvo.
+            Retorna None em caso de uma exceção inesperada.
+        """  
         try:
-            lot_response = []
-            if data.store == 9:
-                for entry in data.error:
+            unique_responses = {}
+            for entry in data.error:               
 
-                
+                    sanitezed_content = self.sanitize_log(entry.erro)
 
-                        sanitezed_content = self.sanitize_log(entry.erro)
-                        regexed_content = self.regex_sanitize_pro(sanitezed_content)
-                        replaced_content = regexed_content.replace('\r\n', '\n').replace('\\', '').replace('rn', ' ')
-                        response = self.template_miner.add_log_message(replaced_content)
-                        print('\n\n\n')
-                        print(response)
-                        lot_response.append(response) if response['cluster_count'] not in lot_response else None
+                    regexed_content = self.regex_sanitize_pro(sanitezed_content)
 
-                print(f"tamanho lot_response criado com sucesso: {len(lot_response)}")
+                    replaced_content = regexed_content.replace('\r\n', '\n').replace('\\', '').replace('rn', ' ')
+
+                    response = self.template_miner.add_log_message(replaced_content)
+
+                    unique_responses[response.get('cluster_id')] = response 
+
+                    table_name = entry.table_name if hasattr(entry, 'table_name') else 'N/A'
+                    
+
+            return list(unique_responses.values()), table_name if unique_responses else []
+
         except Exception as e:
-            print(f"Erro ao criar fingerprint: {e}")
+            logging.error("Erro ao criar fingerprint: %s", e)
             return None
 
 
-    def run(self):
+    def run(self)->list[ErrorSummaryModel]:
         """Executa o processo de análise de erros."""
 
         try:
-            print("Iniciando o processo de análise de erros...")
             
-            # agent = self.agent_factory.create_error_analysis_agent()
-            # print("Agente criado com sucesso.")
 
             data = self.mongo_manager.get_data()
             
             if not data:
-                print("Nenhum dado encontrado.")
-                return None
+                logging.warning("Nenhum dado encontrado.")
+                return []
 
-            grouped_errors = self.error_analysis_service.group_errors_by_store(data)
-            print("Erros agrupados por loja com sucesso.")
+            grouped_errors_by_store = self.group_errors_by_store(data)
 
-            lot_response = []
+            if not grouped_errors_by_store.errors:
+                logging.warning("Nenhum erro agrupado encontrado.")
+                return []
 
-            for error in grouped_errors.errors:
-                self.make_fingerprint(error)
-                # response = self.execute_agent(agent=agent, data=error)
-                # lot_response.append(response)
-                # print(response.model_dump())
+            error_summaries: list[ErrorSummaryModel] = []
 
-            return lot_response
+            for store_errors in grouped_errors_by_store.errors:
+
+                fingerprint_list, table_name = self.make_fingerprint(store_errors)
+                
+
+                if not fingerprint_list:
+                    logging.info(f"Nenhum fingerprint gerado para a loja {store_errors.store}.")
+                    continue
+
+                
+                error_details = [
+                    ErrorDetailModel(
+                        details=fingerprint.get('template_mined'),
+                        occurrences=fingerprint.get('cluster_size', 1),
+                        table_name=table_name or 'N/A', 
+                        analysis_response=self.execute_agent(
+                            agent=self.analyse_agent,
+                            data=fingerprint.get('template_mined')
+                        )
+                    ) for fingerprint in fingerprint_list
+                ]
+                print(error_details[0].model_dump())
+
+                error_summaries.append(ErrorSummaryModel(
+                    store=store_errors.store,
+                    errors=error_details
+                ))            
+
+            return error_summaries
+        
         except Exception as e:
-            print(f"Erro ao executar o agente: {e}")
-            return None
+            logging.error("Erro ao executar o agente: %s", e, exc_info=True)
+            return []
 
 if __name__ == "__main__":
 

@@ -80,9 +80,9 @@ Se uma instrução não puder ser atendida, retorne EXATAMENTE a seguinte mensag
 
 class Extractor:
 
-    def __init__(self):
-        self.mongo_manager = MongoDbManager()
-        self.agent_factory = AgentFactory()
+    def __init__(self, mongo_manager: MongoDbManager = None, agent_factory: AgentFactory = None):
+        self.mongo_manager = mongo_manager or MongoDbManager()
+        self.agent_factory = agent_factory or AgentFactory()
 
     def process_store_errors(self,db_connection: DatabaseManager,store_id: int,queue_name: str = 'int_bi_vendas') -> None:
         """

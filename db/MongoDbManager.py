@@ -85,5 +85,3 @@ class MongoDbManager:
 
             collection = self.db[self.collection_name]
             return collection.delete_many({})
-    
-     
