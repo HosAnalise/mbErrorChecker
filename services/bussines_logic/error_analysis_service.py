@@ -2,14 +2,14 @@ from classes.AgentFactory import AgentFactory
 from db.MongoDbManager import MongoDbManager
 import backoff
 from pydantic_ai import Agent
-from models.ErrorModel.ErrorModel import ErrorModel,ErrorDetailModel, ErrorListModel,ErrorSummaryModel,AnalysisResponseModel
+from models.ErrorModel.ErrorModel import ErrorModel,ErrorDetailModel, ErrorListModel,ErrorSummaryModel,AnalysisResponseModel,QueryReturnModel
 from drain3 import TemplateMiner
 from drain3.template_miner_config import TemplateMinerConfig
 import re
 import unicodedata
 import logging
 from collections import defaultdict
-from pydantic_ai.agent import RunContext
+from models.FingerPrintModel.FingerPrintModel import FingerPrintModel
 
 logging.basicConfig(level=logging.INFO) 
 
@@ -60,7 +60,7 @@ class ErrorAnalysis:
 
 
 
-    def group_errors_by_store(self, ctx: RunContext) -> ErrorListModel:
+    def group_errors_by_store(self, list_errors: list[QueryReturnModel]) -> ErrorListModel:
         """
         Group errors by store code.
 
@@ -73,7 +73,6 @@ class ErrorAnalysis:
 
         try:
             grouped_errors = defaultdict(list)
-            list_errors = ctx
 
 
 
@@ -144,7 +143,7 @@ class ErrorAnalysis:
 
         return sanitized_text
 
-    def make_fingerprint(self, data: ErrorModel) -> list[dict]:
+    def make_fingerprint(self, data: QueryReturnModel) -> list[dict]:
         """
         Normaliza e agrupa logs de erro para criar fingerprints únicos.
 
@@ -162,7 +161,7 @@ class ErrorAnalysis:
         """  
         try:
             unique_responses = {}
-            for entry in data.error:               
+            for entry in data:               
 
                     sanitezed_content = self.sanitize_log(entry.erro)
 
@@ -172,7 +171,7 @@ class ErrorAnalysis:
 
                     response = self.template_miner.add_log_message(replaced_content)
 
-                    unique_responses[response.get('cluster_id')] = response 
+                    unique_responses[response.get('cluster_id')] = FingerPrintModel(**response)
 
                     table_name = entry.table_name if hasattr(entry, 'table_name') else 'N/A'
                     
@@ -187,8 +186,7 @@ class ErrorAnalysis:
     def run(self)->list[ErrorSummaryModel]:
         """Executa o processo de análise de erros."""
 
-        try:
-            
+        try:           
 
             data = self.mongo_manager.get_data()
             
@@ -196,22 +194,20 @@ class ErrorAnalysis:
                 logging.warning("Nenhum dado encontrado.")
                 return []
 
-            grouped_errors_by_store = self.group_errors_by_store(data)
-
-            if not grouped_errors_by_store.errors:
-                logging.warning("Nenhum erro agrupado encontrado.")
-                return []
+            
 
             error_summaries: list[ErrorSummaryModel] = []
 
-            for store_errors in grouped_errors_by_store.errors:
+            for error in data:
 
-                fingerprint_list, table_name = self.make_fingerprint(store_errors)
+                fingerprint_list, table_name = self.make_fingerprint(error.erro)
                 
 
                 if not fingerprint_list:
-                    logging.info(f"Nenhum fingerprint gerado para a loja {store_errors.store}.")
+                    logging.info(f"Nenhum fingerprint gerado para o erro {error}.")
                     continue
+                
+
 
                 
                 error_details = [
@@ -227,11 +223,11 @@ class ErrorAnalysis:
                 ]
 
                 error_summaries.append(ErrorSummaryModel(
-                    store=store_errors.store,
+                    store=error.store,
                     errors=error_details
                 ))            
 
-            return error_summaries
+                return error_summaries
         
         except Exception as e:
             logging.error("Erro ao executar o agente: %s", e, exc_info=True)

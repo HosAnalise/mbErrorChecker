@@ -66,14 +66,19 @@ class MongoDbManager:
         return None
 
     def get_data(self,collection_name:str = 'mb_error_check')->list[QueryReturnModel]:
-
-        
         if self.db is not None:
             if collection_name:
                 self.collection_name = collection_name
 
             collection = self.db[self.collection_name]
-            return [QueryReturnModel(**item) for item in collection.find()]
+            return [QueryReturnModel(**item) for item in collection.find()] 
+        
+
+
+    def get_emails(self):
+        if self.db is not None:
+            collection = self.db['emails']
+            return collection.find()    
         
     def get_data_by_store_id(self, id: int):
         if self.db:
@@ -87,5 +92,3 @@ class MongoDbManager:
 
             collection = self.db[self.collection_name]
             return collection.delete_many({})
-    
-     

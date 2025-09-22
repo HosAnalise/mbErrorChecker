@@ -88,7 +88,3 @@ if __name__ == "__main__":
     else:
         logger.info("Todos os registros foram processados com sucesso. Nenhum e-mail foi enviado.")
 
-    # Para depuração, você pode imprimir o estado final completo
-    # import json
-    # print("\n--- Estado Final Detalhado ---")
-    # print(json.dumps(final_state, indent=2))

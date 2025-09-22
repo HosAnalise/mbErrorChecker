@@ -22,7 +22,7 @@ class EmailListModel(BaseModel):
 
 class EmailModel(BaseModel):
     """Modelo Pydantic para validar os dados de um e-mail."""
-    destinatario: EmailStr  
+    destinatario: list[EmailStr] | EmailStr| str
     assunto: str
     corpo: str
     caminho_imagem: Optional[FilePath] = None

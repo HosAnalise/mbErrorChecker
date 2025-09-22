@@ -25,7 +25,7 @@ def get_credentials():
 def get_recipients():
     """Recupera a lista de destinatários do banco de dados."""
     try:
-        email_list = mongo_manager.get_data(collection_name="emails")
+        email_list = mongo_manager.get_emails()
         email_list_model = EmailListModel(emails=[EmailRecipientModel(**email) for email in email_list])
 
         return [email.email for email in email_list_model.emails if email.is_active == '1']
@@ -36,9 +36,11 @@ def get_recipients():
 def create_email_model(body: str, email: list[str]) -> EmailModel:
     """Cria o modelo de e-mail com base nos dados de erro."""
 
+    receipients = ', '.join(email) if isinstance(email, list) else email
+
     return EmailModel(
-                destinatario=email,
-                assunto=f"Erros encontrados nos robôs da filial MB",
+                destinatario=receipients,
+                assunto=f"Erros encontrados em filiais da MB",
                 corpo=body
             )
 
@@ -56,7 +58,21 @@ def build_server_config(email: str, password: str) -> dict:
             "email": email,
             "senha": password
         }
-  
+
+
+
+def _clean_text(text: any) -> str:
+    """
+    Converte o texto para string, substitui caracteres de espaço não padrão
+    e remove o espaçamento extra no início e no fim.
+    """
+    text_str = str(text)
+    
+    cleaned_text = text_str.replace('\xa0', ' ').replace('\n', ' ').replace('\r', ' ')
+    
+
+    return cleaned_text.strip()
+
 
 
 
@@ -65,33 +81,51 @@ def _build_email_body(grouped_fails: list[ErrorSummaryModel]) -> str:
     
     report_parts = []
     
+    footer = "Email enviado através do sistema de Monitoramento MbErrorCheck. Arquitetado e desenvolvido por Gabriel Siqueira em colaboração com Fabiano Urquiza."
+    
     for summary in grouped_fails:
-        header = textwrap.dedent(f"""
-                                    Email enviado através do sistema de monitoramento de erros dos robôs. Arquitetado e desenvolvido por Gabriel Siqueira em colaboração com Fabiano Urquiza.
-                                 
-                                    A loja MB filial {summary.store} apresentou {len(summary.errors)} erros.
-                                    Erros:
-                                """
-                                )
-
+        header = f"A loja MB filial {summary.store} apresentou {len(summary.errors)} erros."
+        
         error_details_list = []
         for error in summary.errors:
-            error_formatted = textwrap.dedent(f"""
-                Segue o resumo do erro: {error.details}
-                Ocorrências: {error.occurrences}
-                Tabela: {error.table_name}
-                Análise: {error.analysis_response.analysis}
-                Causa: {error.analysis_response.cause}
-                Classificação: {error.analysis_response.error_classification}
-                Passos para resolução: {error.analysis_response.resolution_steps}
-                Criticidade: {error.analysis_response.criticality}
+           
+            error_formatted = textwrap.dedent(f"""\
+                Segue o resumo do erro:
+                    {_clean_text(error.details)}
+
+                Ocorrências:
+                    {_clean_text(error.occurrences)}
+
+                Tabela:
+                    {_clean_text(error.table_name)}
+
+                Análise:
+                    {_clean_text(error.analysis_response.analysis)}
+
+                Causa:
+                    {_clean_text(error.analysis_response.cause)}
+
+                Classificação:
+                    {_clean_text(error.analysis_response.error_classification)}
+                
+                Passos para resolução:
+                    {_clean_text(error.analysis_response.resolution_steps)}
+
+                Criticidade:
+                    {_clean_text(error.analysis_response.criticality)}
             """)
             error_details_list.append(error_formatted)
         
-        full_store_report = header + "\n-----------------\n".join(error_details_list)
+        all_errors_string = "\n\n----------------------------------------\n\n".join(error_details_list)
+        
+        full_store_report = f"{header}\n\n{all_errors_string}"
         report_parts.append(full_store_report)
 
-    return "\n\n========================================\n\n".join(report_parts)
+    final_body = "\n\n========================================\n\n".join(report_parts)
+
+    print(f"{final_body}\n\n{footer}")
+    
+    return f"{final_body}\n\n{footer}"
 
 
 

@@ -98,12 +98,14 @@ class DatabaseManager:
                 result = self.cursor.fetchall()
             else:
                 self.connection.commit()
-                result = None
+                result = None    
             return result
         except Exception as e:
             logger.error(f"Error executing query: {e}")
-            return None
-        
+            if self.connection is not None:
+                self.connection.rollback()
+
+            raise e
 
     def format_query_result(self, resultados: list, table_name: str, store_id: int) -> list[QueryReturnModel]:
         return [
