@@ -14,15 +14,22 @@ class ErrorListModel(BaseModel):
     errors: list[ErrorModel] = Field(..., description="Lista de erros agrupados por loja e tipo")    
 
 
+
+class AnalysisResponseModel(BaseModel):
+    analysis: str = Field(..., description="Lista de análises detalhadas de erros")
+    cause: str = Field(..., description="Causa provável do erro")
+    error_classification: str = Field(..., description="Classificação do erro")
+    resolution_steps: str = Field(..., description="Passos sugeridos para resolução do erro")
+    criticality: str = Field(..., description="Criticidade do erro")
+
 class ErrorDetailModel(BaseModel):
-    type_error: str = Field(..., description="Tipo do erro")
-    details: QueryReturnModel = Field(..., description="Detalhes do erro")
-    store: int = Field(..., description="Loja que o erro pertence")
+    details: str = Field(..., description="Detalhes do erro")
     occurrences: int = Field(..., description="Quantidade de ocorrências do erro")
     table_name: str = Field(..., description="Nome da tabela onde o erro ocorreu")
-
+    analysis_response: AnalysisResponseModel = Field(..., description="Resposta detalhada da análise do erro")
 
 class ErrorSummaryModel(BaseModel):
+    store: int = Field(..., description="Loja que o erro pertence")
     errors: List[ErrorDetailModel] = Field(..., description="Lista detalhada de erros")
 
 

@@ -66,6 +66,8 @@ class MongoDbManager:
         return None
 
     def get_data(self,collection_name:str = 'mb_error_check')->list[QueryReturnModel]:
+
+        
         if self.db is not None:
             if collection_name:
                 self.collection_name = collection_name
