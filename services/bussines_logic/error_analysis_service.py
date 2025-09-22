@@ -225,7 +225,6 @@ class ErrorAnalysis:
                         )
                     ) for fingerprint in fingerprint_list
                 ]
-                print(error_details[0].model_dump())
 
                 error_summaries.append(ErrorSummaryModel(
                     store=store_errors.store,

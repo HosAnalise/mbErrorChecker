@@ -2,11 +2,12 @@ from db.DataBaseManager import DatabaseManager
 from db.MongoDbManager import MongoDbManager
 from classes.ErrorAnalysisService  import ErrorAnalysisService
 
+erro_analyze = ErrorAnalysisService()
+mongo_db_manager = MongoDbManager()
+
 def update_registers():
         print("Iniciando atualização de registros...")
 
-        erro_analyze = ErrorAnalysisService()
-        mongo_db_manager = MongoDbManager()
 
         errors_list = mongo_db_manager.get_data()
         if not errors_list:

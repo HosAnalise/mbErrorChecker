@@ -1,6 +1,11 @@
 from db.DataBaseManager import DatabaseManager
 from db.MongoDbManager import MongoDbManager
 from classes.AgentFactory import AgentFactory
+import logging
+
+
+logger = logging.getLogger(__name__)
+logging.basicConfig(level=logging.INFO)
 
 
 QUERY_STORE_IDS_TO_CHECK = """
@@ -152,10 +157,10 @@ class Extractor:
          
         
 
-    def run(self) -> list:            
+    def run(self) -> bool:            
                 
         try:
-            agent = self.agent_factory.create_agent(agent_instructions=PROMPT,toolsets=[self.get_store_insert_error],output_type=bool|str)
+            agent = self.agent_factory.create_agent(agent_instructions=PROMPT,toolsets=[self.get_store_insert_error],output_type=bool)
             return agent.run_sync("Execute a rotina de verificação de erros de integração.").output
         except Exception as e:
             raise Exception(f"Erro ao executar o agente de extração de dados: {e}")
@@ -164,4 +169,3 @@ class Extractor:
 if __name__ == "__main__":
     extractor = Extractor()
     response = extractor.run() 
-    print(response)  

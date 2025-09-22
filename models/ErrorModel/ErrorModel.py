@@ -11,7 +11,7 @@ class ErrorModel(BaseModel):
 
 
 class ErrorListModel(BaseModel):
-    errors: list[ErrorModel] = Field(..., description="Lista de erros agrupados por loja e tipo")    
+    errors: list[ErrorModel] = Field(..., description="Lista de erros agrupados por loja e tipo")  
 
 
 
