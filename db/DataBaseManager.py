@@ -4,6 +4,7 @@ import logging
 from os import getenv
 from models.DbModel.QueryReturnModel import QueryReturnModel
 from dotenv import load_dotenv
+import hashlib
 
 load_dotenv()
 
@@ -119,7 +120,8 @@ class DatabaseManager:
                 erro=row[6],
                 table_name=table_name,
                 store=store_id,
-                date_column=datetime.now()
+                date_column=datetime.now(),
+                hash=hashlib.md5(str(row[6]).encode()).hexdigest()
             )
             for row in resultados
         ]

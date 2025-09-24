@@ -5,6 +5,8 @@ from db.MongoDbManager import MongoDbManager
 import textwrap
 import logging
 
+from services.bussines_logic.error_analysis_service import ErrorAnalysis
+
 logger = logging.getLogger(__name__)    
 logging.basicConfig(level=logging.INFO)
 
@@ -76,60 +78,47 @@ def _clean_text(text: any) -> str:
 
 
 
-def _build_email_body(grouped_fails: list[ErrorSummaryModel]) -> str:
+def _build_email_body(grouped_fails: ErrorSummaryModel) -> str:
     """Constrói o corpo de texto consolidado para o e-mail de erros."""
     
-    report_parts = []
-    
+    header = "Prezado(a),\n\nForam identificados os seguintes erros nas filiais da MB:"
     footer = "Email enviado através do sistema de Monitoramento MbErrorCheck. Arquitetado e desenvolvido por Gabriel Siqueira em colaboração com Fabiano Urquiza."
     
-    for summary in grouped_fails:
-        header = f"A loja MB filial {summary.store} apresentou {len(summary.errors)} erros."
-        
-        error_details_list = []
-        for error in summary.errors:
-           
-            error_formatted = textwrap.dedent(f"""\
-                Segue o resumo do erro:
-                    {_clean_text(error.details)}
+    error_details_list = [
+        textwrap.dedent(f"""\
+            IDs das lojas afetadas:
+                {_clean_text(', '.join(map(str, summary.store_occurrences)))}
 
-                Ocorrências:
-                    {_clean_text(error.occurrences)}
+            Segue o resumo do erro:
+                {_clean_text(summary.details)}
 
-                Tabela:
-                    {_clean_text(error.table_name)}
+            Tabela:
+                {_clean_text(summary.table_name)}
 
-                Análise:
-                    {_clean_text(error.analysis_response.analysis)}
+            Análise:
+                {_clean_text(summary.analysis_response.analysis)}
 
-                Causa:
-                    {_clean_text(error.analysis_response.cause)}
+            Causa:
+                {_clean_text(summary.analysis_response.cause)}
 
-                Classificação:
-                    {_clean_text(error.analysis_response.error_classification)}
-                
-                Passos para resolução:
-                    {_clean_text(error.analysis_response.resolution_steps)}
+            Classificação:
+                {_clean_text(summary.analysis_response.error_classification)}
+            
+            Passos para resolução:
+                {_clean_text(summary.analysis_response.resolution_steps)}
 
-                Criticidade:
-                    {_clean_text(error.analysis_response.criticality)}
-            """)
-            error_details_list.append(error_formatted)
-        
-        all_errors_string = "\n\n----------------------------------------\n\n".join(error_details_list)
-        
-        full_store_report = f"{header}\n\n{all_errors_string}"
-        report_parts.append(full_store_report)
-
-    final_body = "\n\n========================================\n\n".join(report_parts)
-
-    print(f"{final_body}\n\n{footer}")
+            Criticidade:
+                {_clean_text(summary.analysis_response.criticality)}
+        """) for summary in grouped_fails.errors
+    ]
     
-    return f"{final_body}\n\n{footer}"
+    all_errors_string = "\n\n----------------------------------------\n\n".join(error_details_list)
+    
+    return f"{header}\n\n{all_errors_string}\n\n{footer}"
 
 
 
-def send_email(grouped_fails: list[ErrorSummaryModel]) -> None:
+def send_email(grouped_fails: ErrorSummaryModel) -> None:
     """Envia um único e-mail de notificação consolidado para uma lista de destinatários."""
 
     EMAIL, PASSWORD = get_credentials()
@@ -159,3 +148,17 @@ def send_email(grouped_fails: list[ErrorSummaryModel]) -> None:
 
     except Exception as e:
         logger.error(f"Erro ao enviar e-mail: {e}")
+
+
+
+if __name__ == "__main__":
+    
+    error_agent = ErrorAnalysis()
+
+
+    errors = error_agent.run()
+
+
+    send_email(errors)
+
+

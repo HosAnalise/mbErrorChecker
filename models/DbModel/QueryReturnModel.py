@@ -14,3 +14,4 @@ class QueryReturnModel(BaseModel):
     store:int = Field(..., description="Codigo da loja que o erro pertence")
     table_name:str = Field(..., description="Nome da tabela onde o erro ocorreu")
     date_column:datetime = Field(..., description="Data/hora em que coluna foi resgatada da tabela")
+    hash:str|None = Field(..., description="Hash do erro") 

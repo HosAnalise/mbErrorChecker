@@ -7,6 +7,7 @@ from models.DbModel.QueryReturnModel import QueryReturnModel
 from dotenv import load_dotenv
 from pymongo.results import InsertOneResult, InsertManyResult
 from pymongo.server_api import ServerApi
+import hashlib
 
 
 
@@ -71,6 +72,7 @@ class MongoDbManager:
                 self.collection_name = collection_name
 
             collection = self.db[self.collection_name]
+
             return [QueryReturnModel(**item) for item in collection.find()] 
         
 

@@ -10,3 +10,5 @@ class FingerPrintModel(BaseModel):
     cluster_size: int = Field(..., description="Tamanho do cluster")
     template_mined: str = Field(..., description="Template extraído do erro")
     cluster_count: int = Field(..., description="Contagem de clusters")
+    store: list[int] = Field(..., description="Loja que o erro ocorreu")
+    table_name: str = Field(..., description="Nome da tabela onde o erro ocorreu")

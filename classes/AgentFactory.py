@@ -1,11 +1,11 @@
 from pydantic_ai import Agent
-from pydantic_ai.models.google import GoogleModel
+from pydantic_ai.models.google import GoogleModel,GoogleModelSettings
 from pydantic_ai.providers.google import GoogleProvider
 from google.genai import Client
 from pydantic_ai.models.openai import OpenAIChatModel
 from pydantic_ai.providers.openai import OpenAIProvider
 from os import getenv
-from typing import Type, Optional, List, Union
+from typing import  Optional, List, Union
 from dotenv import load_dotenv
 from models.ErrorModel.ErrorModel import ErrorDetailModel,AnalysisResponseModel
 
@@ -42,24 +42,8 @@ Para cada payload de erro recebido, você deve executar as seguintes ações e e
 
 # Formato de Entrada
 
-Você receberá um objeto JSON com a seguinte estrutura (campos podem variar, mas a base será esta),payloads podem variar:
-```json
-{
-  "timestamp": "2025-09-21T20:30:00Z",
-  "service": "servico-de-pagamentos",
-  "errorCode": "AUTH_002",
-  "message": "Unauthorized: Invalid or expired API Key provided.",
-  "stackTrace": "at ApiGateway.authenticate (ApiGateway.js:45:21)\n at PaymentController.process (PaymentController.js:112:9)\n ...",
-  "requestDetails": {
-    "method": "POST",
-    "endpoint": "/api/v1/process-payment",
-    "clientIp": "189.45.123.78"
-  },
-  "requestBody": {
-    "userId": "usr_c4a1b2",
-    "orderId": "ord_f9e8d7"
-  }
-}
+Você receberá uma string de erro ou um objeto JSON que voce deve avaliar. Para definir o tipo de erro, você pode usar campos como `message`, `stack trace`, `error code`, `service name`, `timestamp`, `user id`, `request id`, entre outros.:
+
 Formato de Saída (Obrigatório)
 Sua resposta DEVE seguir estritamente este formato Markdown:
 
@@ -171,6 +155,7 @@ class AgentFactory:
                      agent_instructions: str, 
                      ai_model: Union[GoogleModel, OpenAIChatModel] = None, 
                      toolsets: Optional[List] = None, 
+                     model_settings: GoogleModelSettings = None,
                      **kwargs):
         """
         Cria e retorna uma instância de Agent configurada.
@@ -202,6 +187,7 @@ class AgentFactory:
             instructions=agent_instructions,
             output_type=output_type,
             toolsets=toolsets,
+            model_settings=model_settings,
             **kwargs
         )
     
@@ -215,7 +201,13 @@ class AgentFactory:
         if ai_model is None:
             ai_model = self.create_google_model()
 
-        return self.create_agent(agent_instructions=agent_instructions, ai_model=ai_model, output_type=AnalysisResponseModel, toolsets=toolsets, **kwargs)
+        model_settings = GoogleModelSettings(
+            temperature=0.2,
+            google_thinking_config={"thinking_budget": 24576},
+           
+        )    
+
+        return self.create_agent(agent_instructions=agent_instructions, ai_model=ai_model, output_type=AnalysisResponseModel, toolsets=toolsets, model_settings=model_settings, **kwargs)
     
 
     

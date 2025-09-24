@@ -24,12 +24,11 @@ class AnalysisResponseModel(BaseModel):
 
 class ErrorDetailModel(BaseModel):
     details: str = Field(..., description="Detalhes do erro")
-    occurrences: int = Field(..., description="Quantidade de ocorrências do erro")
+    store_occurrences: list[int] = Field(..., description="Lojas onde o erro ocorreu")
     table_name: str = Field(..., description="Nome da tabela onde o erro ocorreu")
     analysis_response: AnalysisResponseModel = Field(..., description="Resposta detalhada da análise do erro")
 
 class ErrorSummaryModel(BaseModel):
-    store: int = Field(..., description="Loja que o erro pertence")
     errors: List[ErrorDetailModel] = Field(..., description="Lista detalhada de erros")
 
 
