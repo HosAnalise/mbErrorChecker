@@ -7,13 +7,22 @@ from sqlalchemy.exc import SQLAlchemyError
 
 
 class AlchemyManager:
+
     def __init__(self, database='postgres'):
         self.database ="postgresql+psycopg2" if database == 'postgres' else "firebird+fdb"
         self.settings =  get_db_settings() if database == 'postgres' else get_firebird_settings()
         self.url_postgres = f"{self.database}://{self.settings.DB_USER}:{self.settings.DB_PASSWORD}@{self.settings.DB_HOST_TEMPLATE}:{self.settings.DB_PORT}/{self.settings.DB_NAME}" 
         self.url_firebird = f"{self.database}://{self.settings.DB_USER}:{self.settings.DB_PASSWORD}@{self.settings.DB_HOST_TEMPLATE}:{self.settings.DB_PORT}/{self.settings.DB_PATH}"
+        self.engine = None
 
-
+    def __enter__(self):
+        self.engine = self.db_create_engine()
+        return self
+    
+    def __exit__(self, exc_type, exc_value, traceback):
+        if self.engine:
+            self.engine.dispose()
+            self.engine = None
 
     def db_create_engine(self):
         try:
@@ -24,4 +33,7 @@ class AlchemyManager:
         except SQLAlchemyError as e:
             print(f"Error creating the database engine: {e}")
             return None
+        
+
+    
     

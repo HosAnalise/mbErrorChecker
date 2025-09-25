@@ -222,13 +222,8 @@ class Caixa(Base):
     flag_devolucao_sem_venda: Mapped[Optional[int]] = mapped_column(INTEGER)
 
     valor_cartao_presente: Mapped[Optional[float]] = mapped_column(FLOAT)
-    
-    id_bling: Mapped[Optional[int]] = mapped_column(VARCHAR(40))
 
-
-
-
-   
+    id_bling: Mapped[Optional[int]] = mapped_column(VARCHAR(40))   
 
    
     def __repr__(self) -> str:
