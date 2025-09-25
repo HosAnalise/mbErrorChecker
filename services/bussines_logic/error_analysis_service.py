@@ -96,8 +96,6 @@ class ErrorAnalysis:
                 )
                 for fp in fingerprint_list
             ]
-
-
             
             return ErrorSummaryModel(errors=error_summaries)
 
