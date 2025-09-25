@@ -55,14 +55,14 @@ def workflow_after_update(state: GraphState) -> str:
 def make_workflow():
     workflow = StateGraph(GraphState)
 
-    workflow.add_node("process_items", extract_data_node)
+    workflow.add_node("extract_data", extract_data_node)
     workflow.add_node("update_database", update_database_node)
     workflow.add_node("group_failures", group_failures_node)
     workflow.add_node("send_email", send_email_node)
 
-    workflow.set_entry_point("process_items")
+    workflow.set_entry_point("extract_data")
 
-    workflow.add_edge("process_items", "update_database")
+    workflow.add_edge("extract_data", "update_database")
     workflow.add_edge("group_failures", "send_email")
     workflow.add_edge("send_email", END)
 

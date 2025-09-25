@@ -1,4 +1,3 @@
-#criar classe de conexao com mongoDB usando como base a classe DataBaseManager
 from pymongo import MongoClient
 from pymongo.errors import ConnectionFailure
 import logging
@@ -8,6 +7,7 @@ from dotenv import load_dotenv
 from pymongo.results import InsertOneResult, InsertManyResult
 from pymongo.server_api import ServerApi
 import hashlib
+from settings.settings import get_mongo_settings
 
 
 
@@ -22,10 +22,11 @@ class MongoDbManager:
     MongoDB connection handler.
     """
 
-    def __init__(self,):
-        self.uri = getenv("MONGODB_URI") 
-        self.db_name = getenv("MONGO_DB_NAME")
-        self.collection_name = getenv("MONGO_COLLECTION_NAME")
+    def __init__(self,settings=None):
+        self.settings = settings or get_mongo_settings()
+        self.uri = self.settings.MONGODB_URI
+        self.db_name = self.settings.MONGO_DB_NAME
+        self.collection_name = self.settings.MONGO_COLLECTION_NAME
         self.client = MongoClient(self.uri,server_api=ServerApi('1'))
         self.db = self.client[self.db_name]
 

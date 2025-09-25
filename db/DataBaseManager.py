@@ -1,12 +1,10 @@
 from datetime import datetime
 import psycopg
 import logging
-from os import getenv
 from models.DbModel.QueryReturnModel import QueryReturnModel
-from dotenv import load_dotenv
 import hashlib
+from settings.settings import get_db_settings
 
-load_dotenv()
 
 
 logger = logging.getLogger(__name__)
@@ -28,9 +26,11 @@ class DatabaseManager:
         store (int): Store number used to build the database host IP. Default is 99.
     """
 
-    def __init__(self, store=99):
-
+    def __init__(self, store=99, settings=None):
+        self.settings = settings or get_db_settings()
         self.store = store
+        self.host = self.settings.DB_HOST_TEMPLATE.format(store=self.store, domain="250" if store != 99 else "230")
+        
         self.connection = None
         self.cursor = None
         self.fila_tabela = {
@@ -65,16 +65,16 @@ class DatabaseManager:
     def db_connection(self):
         try:
             connection = psycopg.connect(
-                dbname=getenv("DB_NAME"),
-                user=getenv("DB_USER"),
-                password=getenv("DB_PASSWORD"),
-                host=f"192.168.{self.store}.250" if self.store != 99 else "192.168.99.230",
-                port=getenv("DB_PORT"),
+                dbname=self.settings.DB_NAME,
+                user=self.settings.DB_USER,
+                password=self.settings.DB_PASSWORD,
+                host=self.host,
+                port=self.settings.DB_PORT,
                 connect_timeout=10
             )
             return connection
         except Exception as e:
-            logger.error(f"Error connecting to the database 192.168.{self.store:02}.250: {e}")
+            logger.error(f"Error connecting to the database {self.host}: {e}")
 
             return None
 
