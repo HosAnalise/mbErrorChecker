@@ -1,8 +1,7 @@
-import datetime
-from typing import Optional
-
 from sqlalchemy import VARCHAR, TIMESTAMP, FLOAT, INTEGER,DATE,TIME
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column
+import datetime
+from typing import Optional
 
 class Base(DeclarativeBase):
     pass
