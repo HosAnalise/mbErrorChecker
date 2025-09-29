@@ -25,7 +25,7 @@ class IntBiVendas(Base):
     
     data_hora_inclusao: Mapped[Optional[datetime.datetime]] = mapped_column(TIMESTAMP)
     
-    erro: Mapped[Optional[str]]  
+    erro: Mapped[Optional[str]]
 
    
     def __repr__(self) -> str:
