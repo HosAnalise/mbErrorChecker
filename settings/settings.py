@@ -34,6 +34,19 @@ class MongoSettings(BaseSettings):
         env_file = ".env"
 
 
+
+class OracleSettings(BaseSettings):
+    DB_NAME: str
+    DB_USER: str
+    DB_PASSWORD: str
+    DB_HOST_TEMPLATE: str
+    DB_PORT: int
+
+    class Config:
+        env_file = ".env"
+        env_prefix = "ORACLE_"        
+
+
 class GoogleSettings(BaseSettings):
     GOOGLE_API_KEY: str
     GOOGLE_MODEL: str
@@ -56,7 +69,9 @@ class EmailSettings(BaseSettings):
         env_file = ".env"
         env_prefix = "EMAIL_"          
 
-
+@lru_cache()
+def get_oracle_settings() -> OracleSettings:
+    return OracleSettings()
 
 @lru_cache()
 def get_firebird_settings() -> FirebirdSettings:
