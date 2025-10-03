@@ -1,11 +1,11 @@
-from drain3 import TemplateMiner
+from drain3.template_miner import TemplateMiner
 from drain3.template_miner_config import TemplateMinerConfig
 import logging
 import sys
 from os.path import dirname, abspath, join
 from models.FingerPrintModel.FingerPrintModel import FingerPrintModel
 from models.DbModel.QueryReturnModel import QueryReturnModel
-from drain3.persistence_handler import FilePersistence
+from drain3.file_persistence import FilePersistence
 from classes.TextFormatter import TextFormatter
 
 
