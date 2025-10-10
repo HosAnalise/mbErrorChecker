@@ -1,8 +1,7 @@
-from classes.AgentFactory import AgentFactory
 from db.MongoDbManager import MongoDbManager
 import backoff
 from pydantic_ai import Agent
-from models.ErrorModel.ErrorModel import ErrorModel, ErrorListModel,ErrorSummaryModel,AnalysisResponseModel,QueryReturnModel,ErrorDetailModel
+from models.ErrorModel.ErrorModel import ErrorModel, ErrorListModel,ErrorSummaryModel,AnalysisResponseModel,QueryReturnModel,ErrorDetailModel,ErrorModelByTable
 from classes.Drain3 import Drain3Miner
 import logging
 from collections import defaultdict
@@ -17,7 +16,7 @@ class ErrorAnalysis:
 
     def __init__(self,mongo_manager: MongoDbManager = None, agent: Agent = None, drain3_miner: Drain3Miner = None):
         self.mongo_manager = mongo_manager or MongoDbManager()
-        self.analyse_agent = agent or AgentFactory().create_error_analysis_agent()
+        self.analyse_agent = agent 
         self.drain3_miner = drain3_miner or Drain3Miner()
 
 
@@ -57,7 +56,41 @@ class ErrorAnalysis:
             logging.error("Erro ao agrupar erros por loja: %s", e, exc_info=True)
             return ErrorListModel(errors=[])
         
- 
+
+
+    
+    def group_error_by_table(self, list_errors: list[QueryReturnModel]) -> ErrorListModel:
+        """
+        Group errors by table name.
+
+        Args:
+            errors (list[QueryReturnModel]): List of query return models.
+
+        Returns:
+            ErrorModelByTable: Object with store code as key and list of errors as value.
+        """
+
+        try:
+            grouped_errors = defaultdict(list)
+
+            for error in list_errors:
+
+                grouped_errors[error.table_name].append(error)
+
+    
+            return ErrorListModel(
+                errors=[
+                    ErrorModelByTable(
+                        error=value,
+                        table_name=key,
+                        count=len(value)
+                    ) for key,value in grouped_errors.items()
+                ]
+            )    
+        except Exception as e:
+            logging.error("Error to group errors by table: %s", e, exc_info=True)
+            return ErrorListModel(errors=[])
+        
 
 
     @backoff.on_exception(backoff.expo, Exception,max_tries=20)

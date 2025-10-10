@@ -3,31 +3,55 @@ from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
 from email.mime.image import MIMEImage
 from dotenv import load_dotenv
-from pydantic import BaseModel, EmailStr, FilePath
+from pydantic import BaseModel, EmailStr, FilePath, field_validator
 from typing import Optional
 import os
 
 load_dotenv()
 
 class EmailRecipientModel(BaseModel):
-    """Modelo Pydantic para validar uma lista de e-mails."""
+    """ Pydantic model to validate an email recipient."""
     email: EmailStr 
     destinatario: str
-    is_active: str  # '1' para ativo, '0' para inativo
+    is_active: str  
+
+    @field_validator('is_active', mode='before')
+    def validate_is_active(cls, v):
+        """Validate if is_active is '0' or '1'."""
+        if v not in ('0', '1'):
+            raise ValueError("The field 'is_active' must be '0' or '1' in EmailRecipientModel.")
+        return v
 
 class EmailListModel(BaseModel):
-    """Modelo Pydantic para validar uma lista de e-mails."""
+    """ Pydantic model to validate a list of email recipients."""
     emails: list[EmailRecipientModel]
+    
+    @field_validator('emails')
+    def validate_emails(cls, v):
+        """Valida se a lista de e-mails não está vazia."""
+        if not v and isinstance(v, list):
+            raise ValueError("The email list cannot be empty in EmailListModel.")
+        return v
+
 
 
 class EmailModel(BaseModel):
-    """Modelo Pydantic para validar os dados de um e-mail."""
-    destinatario: list[EmailStr] | EmailStr| str
+    """ Pydantic model to validate the data of an email."""
+    destinatario: list[EmailStr] | EmailStr
     assunto: str
     corpo: str
     caminho_imagem: Optional[FilePath] = None
     nome_arquivo_anexo: Optional[str] = None
 
+
+    @field_validator('caminho_imagem', 'nome_arquivo_anexo', mode='before')
+    def validate_image_fields(cls, v, info):
+        """Valida se ambos os campos de imagem são fornecidos juntos."""
+        caminho_imagem = info.data.get('caminho_imagem')
+        nome_arquivo_anexo = info.data.get('nome_arquivo_anexo')
+        if (caminho_imagem and not nome_arquivo_anexo) or (nome_arquivo_anexo and not caminho_imagem):
+            raise ValueError("Ambos 'caminho_imagem' e 'nome_arquivo_anexo' devem ser fornecidos juntos.")
+        return v
 
 class EmailComposer:
     """

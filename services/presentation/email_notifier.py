@@ -12,7 +12,6 @@ logging.basicConfig(level=logging.INFO)
 
 
 
-mongo_manager = MongoDbManager()
 
 def get_credentials():
     """Obtém as credenciais de e-mail (usuário e senha) de variáveis de ambiente."""
@@ -24,7 +23,7 @@ def get_credentials():
     
     return EMAIL, PASSWORD
 
-def get_recipients():
+def get_recipients(mongo_manager: MongoDbManager) -> list[str]:
     """Recupera a lista de destinatários do banco de dados."""
     try:
         email_list = mongo_manager.get_emails()
@@ -118,7 +117,7 @@ def _build_email_body(grouped_fails: ErrorSummaryModel) -> str:
 
 
 
-def send_email(grouped_fails: ErrorSummaryModel) -> None:
+def send_email(grouped_fails: ErrorSummaryModel,mongo_manager: MongoDbManager) -> None:
     """Envia um único e-mail de notificação consolidado para uma lista de destinatários."""
 
     EMAIL, PASSWORD = get_credentials()
@@ -126,7 +125,7 @@ def send_email(grouped_fails: ErrorSummaryModel) -> None:
         logger.error("Credenciais de e-mail não encontradas. O e-mail não será enviado.")
         return
 
-    recipients = get_recipients()
+    recipients = get_recipients(mongo_manager=mongo_manager)
     if not recipients:
         logger.warning("Nenhum destinatário encontrado. O e-mail não será enviado.")
         return 

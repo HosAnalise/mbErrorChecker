@@ -9,11 +9,13 @@ class ErrorModel(BaseModel):
     store: int = Field(..., description="Loja que o erro pertence")
     count: int = Field(..., description="Quantidade de erros encontrados por loja")
 
+class ErrorModelByTable(BaseModel):    
+    error: list[QueryReturnModel] = Field(..., description="Lista com todo erros encontrados por tabela do banco de dados")
+    table_name: str = Field(..., description="Nome da tabela que o erro pertence")
+    count: int = Field(..., description="Quantidade de erros encontrados por tabela")
 
 class ErrorListModel(BaseModel):
-    errors: list[ErrorModel] = Field(..., description="Lista de erros agrupados por loja e tipo")  
-
-
+    errors: list[ErrorModel]|list[ErrorModelByTable] = Field(..., description="Lista de erros agrupados por loja e tipo")  
 
 class AnalysisResponseModel(BaseModel):
     analysis: str = Field(..., description="Lista de análises detalhadas de erros")
